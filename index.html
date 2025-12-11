@@ -23,11 +23,10 @@
       }
     </script>
     
-    <!-- React & Babel -->
+    <!-- React & Babel & JSZip -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- JSZip (ZIP圧縮用) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <style>
@@ -38,23 +37,26 @@
       #root { height: 100vh; height: 100dvh; }
       input, textarea, button { font-size: 14px; }
       textarea::placeholder { color: #555; opacity: 1; }
+      .folder-content { transition: all 0.2s; overflow: hidden; }
     </style>
   </head>
   <body>
     <div id="root" class="w-screen flex flex-col"></div>
 
     <script type="text/babel" data-presets="react,typescript">
-      const { useState, useEffect, useRef } = React;
+      const { useState, useEffect, useRef, useMemo } = React;
 
       // --- アイコン ---
-      const Icon = ({ path, size = 18, className = "" }) => (
-        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: path }} />
+      const Icon = ({ path, size = 18, className = "", style={} }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style} dangerouslySetInnerHTML={{ __html: path }} />
       );
       const Icons = {
         Menu: (p) => <Icon {...p} path='<line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/>' />,
         Plus: (p) => <Icon {...p} path='<path d="M5 12h14"/><path d="M12 5v14"/>' />,
         Trash2: (p) => <Icon {...p} path='<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>' />,
         Folder: (p) => <Icon {...p} path='<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>' />,
+        FolderOpen: (p) => <Icon {...p} path='<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>' />,
+        File: (p) => <Icon {...p} path='<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/>' />,
         X: (p) => <Icon {...p} path='<path d="M18 6 6 18"/><path d="m6 6 12 12"/>' />,
         Code: (p) => <Icon {...p} path='<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' />,
         Play: (p) => <Icon {...p} path='<polygon points="5 3 19 12 5 21 5 3"/>' />,
@@ -63,7 +65,9 @@
         SelectAll: (p) => <Icon {...p} path='<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>' />,
         Download: (p) => <Icon {...p} path='<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>' />,
         Upload: (p) => <Icon {...p} path='<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>' />,
-        Archive: (p) => <Icon {...p} path='<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>' />
+        Archive: (p) => <Icon {...p} path='<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>' />,
+        ChevronRight: (p) => <Icon {...p} path='<polyline points="9 18 15 12 9 6"/>' />,
+        ChevronDown: (p) => <Icon {...p} path='<polyline points="6 9 12 15 18 9"/>' />
       };
 
       const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -111,74 +115,81 @@
         );
       };
 
-      // --- プレビュー画面 (モジュール/フォルダ/React完全対応) ---
-      const Preview = ({ files }) => {
-        const [srcDoc, setSrcDoc] = useState('');
-
-        useEffect(() => {
-          const process = async () => {
-            const fileMap = {};
-            files.forEach(f => fileMap[f.name] = f.content);
-
-            let htmlContent = fileMap['index.html'] || `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Preview</title></head><body><div id="root"></div></body></html>`;
-
-            const css = files.filter(f => f.name.endsWith('.css')).map(f => f.content).join('\n');
-            const styleTag = `<style>${css} body { background-color: white; }</style>`;
-            if (htmlContent.includes('</head>')) htmlContent = htmlContent.replace('</head>', `${styleTag}</head>`);
-            else htmlContent += styleTag;
-
-            const imports = {
-              "react": "https://esm.sh/react@18.2.0",
-              "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-              "react-dom": "https://esm.sh/react-dom@18.2.0",
-            };
-
-            const scriptFiles = files.filter(f => /\.(ts|tsx|js|jsx)$/.test(f.name));
-            
-            for (const file of scriptFiles) {
-              try {
-                let code = file.content;
-                const result = window.Babel.transform(code, {
-                  presets: [['env', { modules: false, targets: { esmodules: true } }], 'react', 'typescript'],
-                  filename: file.name
-                });
-                const blob = new Blob([result.code], { type: 'application/javascript' });
-                const url = URL.createObjectURL(blob);
-                const cleanName = "./" + file.name;
-                const nameWithoutExt = cleanName.replace(/\.(tsx|ts|jsx|js)$/, '');
-                imports[cleanName] = url;
-                imports[nameWithoutExt] = url;
-              } catch (e) { console.error("Compilation error:", file.name, e); }
+      // --- ツリー構築ロジック ---
+      const buildFileTree = (files) => {
+        const root = { name: "root", isFolder: true, children: {}, path: "" };
+        files.forEach(file => {
+          const parts = file.name.split('/');
+          let current = root;
+          parts.forEach((part, index) => {
+            if (index === parts.length - 1) {
+              // ファイル
+              current.children[part] = { ...file, isFolder: false, path: file.name };
+            } else {
+              // フォルダ
+              if (!current.children[part]) {
+                current.children[part] = { name: part, isFolder: true, children: {}, path: current.path ? `${current.path}/${part}` : part };
+              }
+              current = current.children[part];
             }
-
-            const importMapScript = `<script type="importmap">${JSON.stringify({ imports }, null, 2)}<\/script>`;
-            
-            const entryFile = files.find(f => f.name === 'main.tsx' || f.name === 'index.tsx' || f.name === 'App.tsx' || f.name === 'index.js');
-            const entryScript = entryFile ? `<script type="module">import "${'./' + entryFile.name}";<\/script>` : `<script>console.warn("No entry file found.");<\/script>`;
-            
-            const tailwindScript = `<script src="https://cdn.tailwindcss.com"><\/script>`;
-            const finalHead = `${tailwindScript}${importMapScript}<script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script><script>tailwind.config={theme:{extend:{fontFamily:{sans:['sans-serif'],mono:['monospace']},colors:{editor:{bg:'#1e1e1e',sidebar:'#252526',active:'#37373d',border:'#333'}}}}};<\/script>`;
-
-            if (htmlContent.includes('<head>')) htmlContent = htmlContent.replace('<head>', `<head>${finalHead}`);
-            else htmlContent = finalHead + htmlContent;
-
-            if (htmlContent.includes('</body>')) htmlContent = htmlContent.replace('</body>', `${entryScript}</body>`);
-            else htmlContent += entryScript;
-
-            setSrcDoc(htmlContent);
-          };
-          process();
-        }, [files]);
-
-        return <iframe srcDoc={srcDoc} className="flex-1 w-full h-full bg-white border-none" sandbox="allow-scripts allow-modals allow-same-origin allow-forms" title="Preview" />;
+          });
+        });
+        return root;
       };
 
-      // --- サイドバー（ファイル一覧 + ZIPダウンロード） ---
+      // --- 再帰的フォルダコンポーネント ---
+      const FileTreeNode = ({ node, activeFileId, onSelect, onDelete, depth = 0 }) => {
+        const [isOpen, setIsOpen] = useState(true);
+
+        // ファイルの場合
+        if (!node.isFolder) {
+          return (
+             <div onClick={() => onSelect(node.id)} className={`flex justify-between items-center py-1.5 pr-2 cursor-pointer text-sm hover:bg-gray-800 ${activeFileId === node.id ? 'bg-editor-active text-white border-l-2 border-l-blue-500' : 'text-gray-400 border-l-2 border-transparent'}`} style={{ paddingLeft: `${depth * 12 + 12}px` }}>
+                <div className="flex items-center gap-1.5 min-w-0">
+                   <Icons.File size={14} className="shrink-0 opacity-70" />
+                   <span className="truncate">{node.name.split('/').pop()}</span>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); if(confirm(`${node.name} を削除しますか？`)) onDelete(node.id); }} className="text-gray-600 hover:text-red-400 p-0.5 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"><Icons.Trash2 size={13} /></button>
+             </div>
+          );
+        }
+
+        // フォルダの場合
+        const children = Object.values(node.children).sort((a, b) => {
+            if (a.isFolder === b.isFolder) return a.name.localeCompare(b.name);
+            return a.isFolder ? -1 : 1;
+        });
+
+        if (node.name === "root") {
+             return <div className="flex flex-col">{children.map((child) => <FileTreeNode key={child.path} node={child} activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete} depth={0} />)}</div>;
+        }
+
+        return (
+          <div className="flex flex-col select-none">
+            <div onClick={() => setIsOpen(!isOpen)} className={`flex items-center py-1.5 pr-2 cursor-pointer text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors`} style={{ paddingLeft: `${depth * 12 + 6}px` }}>
+              <span className="p-0.5 mr-0.5 text-gray-500">{isOpen ? <Icons.ChevronDown size={14}/> : <Icons.ChevronRight size={14}/>}</span>
+              <Icons.Folder size={14} className="mr-1.5 text-blue-400" />
+              <span className="truncate font-medium">{node.name}</span>
+            </div>
+            {isOpen && (
+              <div className="flex flex-col">
+                {children.map((child) => (
+                  <FileTreeNode key={child.path} node={child} activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete} depth={depth + 1} />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      // --- サイドバー（ファイル一覧 + ツリー表示） ---
       const FileExplorer = ({ files, activeFileId, onSelect, onAdd, onDelete, onUpload }) => {
         const [name, setName] = useState('');
         const [isAdding, setIsAdding] = useState(false);
         const fileInputRef = useRef(null);
         
+        const fileTree = useMemo(() => buildFileTree(files), [files]);
+
         const handleSubmit = (e) => {
           e.preventDefault();
           if(!name) return;
@@ -208,21 +219,15 @@
           e.target.value = '';
         };
 
-        // ★ ZIPダウンロード機能
         const handleDownloadZip = async () => {
           if (!window.JSZip) { alert('JSZip library not loaded.'); return; }
           const zip = new JSZip();
-          files.forEach(f => {
-            // フォルダ階層 (例: components/Header.tsx) もJSZipが自動処理してくれます
-            zip.file(f.name, f.content);
-          });
+          files.forEach(f => zip.file(f.name, f.content));
           const content = await zip.generateAsync({type: "blob"});
           const link = document.createElement('a');
           link.href = URL.createObjectURL(content);
           link.download = `project_${new Date().getTime()}.zip`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
 
         return (
@@ -230,7 +235,7 @@
              <div className="p-3 border-b border-editor-border flex justify-between items-center shrink-0">
                <span className="text-xs font-bold text-gray-400">ファイル一覧</span>
                <div className="flex gap-1">
-                 <button onClick={handleDownloadZip} className="text-gray-400 hover:text-white p-1 flex items-center gap-1" title="ZIPでダウンロード">
+                 <button onClick={handleDownloadZip} className="text-gray-400 hover:text-white p-1 flex items-center gap-1" title="ZIPで保存">
                    <Icons.Archive size={16}/> <span className="text-[10px]">保存</span>
                  </button>
                  <button onClick={()=>fileInputRef.current.click()} className="text-gray-400 hover:text-white p-1 flex items-center gap-1" title="アップロード">
@@ -247,17 +252,97 @@
                  <input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-gray-900 text-white text-sm p-2 rounded outline-none border border-blue-500" placeholder="例: components/Button.tsx" autoFocus onBlur={()=>{if(!name)setIsAdding(false)}}/>
                </form>
              )}
-             <div className="flex-1 overflow-y-auto">
-               {files.map(f => (
-                 <div key={f.id} onClick={()=>onSelect(f.id)} className={`flex justify-between items-center px-4 py-2 cursor-pointer text-sm border-b border-gray-800 hover:bg-gray-800 ${activeFileId===f.id ? 'bg-editor-active text-white border-l-4 border-l-blue-500' : 'text-gray-400'}`}>
-                   <span className="truncate">{f.name}</span>
-                   <button onClick={(e)=>{e.stopPropagation(); if(confirm(`${f.name} を削除しますか？`)) onDelete(f.id)}} className="text-gray-600 hover:text-red-400 p-1"><Icons.Trash2 size={14}/></button>
-                 </div>
-               ))}
-               {files.length === 0 && <div className="p-4 text-xs text-center text-gray-600">ファイルがありません</div>}
+             <div className="flex-1 overflow-y-auto group">
+               {files.length === 0 ? (
+                 <div className="p-4 text-xs text-center text-gray-600">ファイルがありません</div>
+               ) : (
+                 <FileTreeNode node={fileTree} activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete} />
+               )}
              </div>
           </div>
         );
+      };
+
+      // --- プレビュー画面 (階層・import対応強化版) ---
+      const Preview = ({ files }) => {
+        const [srcDoc, setSrcDoc] = useState('');
+
+        useEffect(() => {
+          const process = async () => {
+            const fileMap = {};
+            files.forEach(f => fileMap[f.name] = f.content);
+
+            // 1. index.html を探す。なければ作成。ある場合は中身を使う。
+            let originalHtml = fileMap['index.html'] || `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="root"></div></body></html>`;
+
+            // 2. CSSの注入
+            const css = files.filter(f => f.name.endsWith('.css')).map(f => f.content).join('\n');
+            const styleTag = `<style>${css} body { background-color: white; }</style>`;
+            if (originalHtml.includes('</head>')) originalHtml = originalHtml.replace('</head>', `${styleTag}</head>`);
+            else originalHtml += styleTag;
+
+            // 3. JS/TSファイルのコンパイルとImportMapの作成
+            const imports = {
+              "react": "https://esm.sh/react@18.2.0",
+              "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+              "react-dom": "https://esm.sh/react-dom@18.2.0",
+            };
+
+            const scriptFiles = files.filter(f => /\.(ts|tsx|js|jsx)$/.test(f.name));
+            
+            for (const file of scriptFiles) {
+              try {
+                let code = file.content;
+                const result = window.Babel.transform(code, {
+                  presets: [['env', { modules: false, targets: { esmodules: true } }], 'react', 'typescript'],
+                  filename: file.name
+                });
+                const blob = new Blob([result.code], { type: 'application/javascript' });
+                const url = URL.createObjectURL(blob);
+                
+                // ImportMapのキーを生成 ( ./components/Header.tsx と ./components/Header の両方に対応 )
+                // ファイルパスは常に ./ から始まるように正規化
+                const fullPath = "./" + file.name;
+                const noExt = fullPath.replace(/\.(tsx|ts|jsx|js)$/, '');
+                
+                imports[fullPath] = url;
+                imports[noExt] = url;
+              } catch (e) { console.error("Compilation error:", file.name, e); }
+            }
+
+            // 4. エントリーポイントの検出と実行スクリプトの作成
+            // ユーザーがindex.htmlを持っている場合でも、Reactのエントリーポイント(App.tsxなど)を起動する必要がある。
+            // html内に既にscriptタグがあるかもしれないが、moduleタイプのスクリプトとして追加注入する。
+            const entryFile = files.find(f => 
+              ['main.tsx', 'index.tsx', 'App.tsx', 'index.js', 'main.js'].includes(f.name) ||
+              ['src/main.tsx', 'src/index.tsx', 'src/App.tsx'].includes(f.name)
+            );
+
+            const importMapScript = `<script type="importmap">${JSON.stringify({ imports }, null, 2)}<\/script>`;
+            const tailwindScript = `<script src="https://cdn.tailwindcss.com"><\/script>`;
+            const babelLib = `<script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>`;
+            
+            // エントリーポイントがあれば実行。なければ何もしない（HTML内のscriptに任せる）
+            let entryScript = '';
+            if (entryFile) {
+               entryScript = `<script type="module">import "${'./' + entryFile.name}";<\/script>`;
+            }
+
+            const headExtras = `${tailwindScript}${importMapScript}${babelLib}<script>tailwind.config={theme:{extend:{fontFamily:{sans:['sans-serif'],mono:['monospace']},colors:{editor:{bg:'#1e1e1e',sidebar:'#252526',active:'#37373d',border:'#333'}}}}};<\/script>`;
+
+            let finalHtml = originalHtml;
+            if (finalHtml.includes('<head>')) finalHtml = finalHtml.replace('<head>', `<head>${headExtras}`);
+            else finalHtml = headExtras + finalHtml;
+
+            if (finalHtml.includes('</body>')) finalHtml = finalHtml.replace('</body>', `${entryScript}</body>`);
+            else finalHtml += entryScript;
+
+            setSrcDoc(finalHtml);
+          };
+          process();
+        }, [files]);
+
+        return <iframe srcDoc={srcDoc} className="flex-1 w-full h-full bg-white border-none" sandbox="allow-scripts allow-modals allow-same-origin allow-forms" title="Preview" />;
       };
 
       // --- サイドバー（プロジェクト管理） ---
@@ -314,7 +399,6 @@
       };
 
       const App = () => {
-        // ★完全な空っぽで開始
         const INITIAL_FILES = [];
 
         const [files, setFiles] = useState(INITIAL_FILES);
