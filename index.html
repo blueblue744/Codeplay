@@ -2,17 +2,17 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CodePlay AI (Offline)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>CodePlay AI (日本語版)</title>
     
-    <!-- ▼ 修正点: "js/" を削除して、同じ場所のファイルを読み込むようにしました -->
+    <!-- 同じフォルダにあるライブラリを読み込み -->
     <script src="tailwind.js"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: { sans: ['sans-serif'], mono: ['monospace'] },
-            colors: { editor: { bg: '#1e1e1e', sidebar: '#252526' } }
+            colors: { editor: { bg: '#1e1e1e', sidebar: '#252526', active: '#37373d' } }
           },
         },
       }
@@ -22,27 +22,30 @@
     <script src="babel.js"></script>
     
     <style>
-      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      /* スクロールバーのカスタマイズ */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
       ::-webkit-scrollbar-track { background: #1e1e1e; }
-      ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
-      body { margin: 0; overflow: hidden; background-color: #111827; }
+      ::-webkit-scrollbar-thumb { background: #424242; border-radius: 3px; }
+      body { margin: 0; overflow: hidden; background-color: #111827; touch-action: manipulation; }
+      /* iPhoneでの表示調整 */
+      input, textarea, button { font-size: 16px; } /* 自動ズーム防止 */
     </style>
   </head>
   <body>
-    <div id="root" class="h-screen w-screen"></div>
+    <div id="root" class="h-screen w-screen flex flex-col"></div>
 
     <script type="text/babel" data-presets="react,typescript">
       const { useState, useEffect, useRef } = React;
 
-      // アイコン定義 (SVG)
-      const Icon = ({ path, size = 16, className = "" }) => (
+      // --- アイコン (SVG) ---
+      const Icon = ({ path, size = 18, className = "" }) => (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: path }} />
       );
       const Icons = {
+        Menu: (p) => <Icon {...p} path='<line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/>' />,
         Plus: (p) => <Icon {...p} path='<path d="M5 12h14"/><path d="M12 5v14"/>' />,
         Trash2: (p) => <Icon {...p} path='<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>' />,
         Folder: (p) => <Icon {...p} path='<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>' />,
-        FolderOpen: (p) => <Icon {...p} path='<path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-3.25 7a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>' />,
         X: (p) => <Icon {...p} path='<path d="M18 6 6 18"/><path d="m6 6 12 12"/>' />,
         Check: (p) => <Icon {...p} path='<polyline points="20 6 9 17 4 12"/>' />,
         Copy: (p) => <Icon {...p} path='<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>' />,
@@ -51,11 +54,14 @@
         Wand2: (p) => <Icon {...p} path='<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/>' />,
         RefreshCw: (p) => <Icon {...p} path='<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>' />,
         RotateCcw: (p) => <Icon {...p} path='<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>' />,
-        Code: (p) => <Icon {...p} path='<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' />
+        Code: (p) => <Icon {...p} path='<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' />,
+        Play: (p) => <Icon {...p} path='<polygon points="5 3 19 12 5 21 5 3"/>' />,
+        List: (p) => <Icon {...p} path='<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>' />
       };
 
       const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
+      // --- コンポーネント: エディタ ---
       const Editor = ({ file, onChange }) => {
         const [copied, setCopied] = useState(false);
         const textareaRef = useRef(null);
@@ -89,16 +95,18 @@
               onKeyDown={handleKeyDown}
               className="flex-1 w-full bg-editor-bg text-gray-300 font-mono text-sm p-4 resize-none focus:outline-none"
               spellCheck={false}
+              autoCapitalize="off"
             />
           </div>
         );
       };
 
+      // --- コンポーネント: プレビュー ---
       const Preview = ({ files }) => {
         const [srcDoc, setSrcDoc] = useState('');
         useEffect(() => {
             const htmlFile = files.find(f => f.name === 'index.html');
-            if (!htmlFile) { setSrcDoc('<html><body>index.html not found</body></html>'); return; }
+            if (!htmlFile) { setSrcDoc('<html><body style="color:#fff;background:#111;padding:20px;">index.html が見つかりません</body></html>'); return; }
             
             const css = files.filter(f => f.language === 'css').map(f => `<style>${f.content}</style>`).join('\n');
             const js = files.filter(f => f.language === 'javascript').map(f => `try{${f.content.replace(/import .*?;/g,'')}}catch(e){console.error(e)}`).join('\n');
@@ -113,7 +121,6 @@
             }
 
             let doc = htmlFile.content;
-            // ▼ 修正点: プレビュー内でも同じ場所のライブラリを探すように修正
             const injectHead = `
               ${css}
               <script src="tailwind.js"><\/script>
@@ -134,6 +141,7 @@
         return <iframe srcDoc={srcDoc} className="flex-1 w-full h-full bg-white border-none" sandbox="allow-scripts allow-modals allow-same-origin" />;
       };
 
+      // --- コンポーネント: ファイル一覧 ---
       const FileExplorer = ({ files, activeFileId, onSelect, onAdd, onDelete }) => {
         const [name, setName] = useState('');
         const [isAdding, setIsAdding] = useState(false);
@@ -149,17 +157,17 @@
           setName(''); setIsAdding(false);
         };
         return (
-          <div className="w-56 bg-editor-sidebar border-r border-gray-800 flex flex-col">
-             <div className="p-3 border-b border-gray-800 flex justify-between items-center">
-               <span className="text-xs font-bold text-gray-400">FILES</span>
-               <button onClick={()=>setIsAdding(!isAdding)} className="text-gray-400 hover:text-white"><Icons.Plus size={16}/></button>
+          <div className="flex flex-col h-full bg-editor-sidebar border-r border-gray-800">
+             <div className="p-3 border-b border-gray-800 flex justify-between items-center bg-editor-sidebar">
+               <span className="text-xs font-bold text-gray-400">ファイル一覧</span>
+               <button onClick={()=>setIsAdding(!isAdding)} className="text-gray-400 hover:text-white p-2"><Icons.Plus size={18}/></button>
              </div>
-             {isAdding && <form onSubmit={handleSubmit} className="p-2 bg-gray-800"><input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-gray-900 text-white text-xs p-1 rounded" placeholder="index.ts" autoFocus onBlur={()=>!name && setIsAdding(false)}/></form>}
+             {isAdding && <form onSubmit={handleSubmit} className="p-2 bg-gray-800"><input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-gray-900 text-white text-sm p-2 rounded" placeholder="ファイル名 (例: test.js)" autoFocus onBlur={()=>!name && setIsAdding(false)}/></form>}
              <div className="flex-1 overflow-y-auto">
                {files.map(f => (
-                 <div key={f.id} onClick={()=>onSelect(f.id)} className={`flex justify-between items-center px-3 py-1.5 cursor-pointer text-sm ${activeFileId===f.id ? 'bg-gray-800 text-white border-l-2 border-blue-500' : 'text-gray-400'}`}>
+                 <div key={f.id} onClick={()=>onSelect(f.id)} className={`flex justify-between items-center px-4 py-3 cursor-pointer text-sm border-b border-gray-800 ${activeFileId===f.id ? 'bg-editor-active text-white border-l-4 border-l-blue-500' : 'text-gray-400'}`}>
                    <span className="truncate">{f.name}</span>
-                   <button onClick={(e)=>{e.stopPropagation(); onDelete(f.id)}} className="hover:text-red-400"><Icons.Trash2 size={12}/></button>
+                   <button onClick={(e)=>{e.stopPropagation(); onDelete(f.id)}} className="text-gray-600 hover:text-red-400 p-2"><Icons.Trash2 size={16}/></button>
                  </div>
                ))}
              </div>
@@ -167,75 +175,90 @@
         );
       };
 
+      // --- コンポーネント: サイドメニュー（プロジェクト管理） ---
       const Sidebar = ({ isOpen, onClose, projects, onSave, onLoad, onDelete, onClear, onImport }) => {
         const [pName, setPName] = useState('');
         const fileRef = useRef(null);
         if(!isOpen) return null;
         return (
           <div className="fixed inset-0 z-50 flex">
-            <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-            <div className="relative w-80 bg-gray-900 border-r border-gray-800 flex flex-col h-full shadow-xl">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-80 max-w-[90%] bg-gray-900 border-r border-gray-800 flex flex-col h-full shadow-2xl">
               <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-                 <span className="text-white font-bold flex gap-2"><Icons.Folder size={20} className="text-blue-500"/> Projects</span>
-                 <button onClick={onClose} className="text-gray-400"><Icons.X size={20}/></button>
+                 <span className="text-white font-bold flex gap-2 items-center"><Icons.Folder size={20} className="text-blue-500"/> プロジェクト</span>
+                 <button onClick={onClose} className="text-gray-400 p-2"><Icons.X size={20}/></button>
               </div>
               <div className="p-4 bg-gray-800/50 border-b border-gray-800 space-y-3">
                  <div className="flex gap-2">
-                   <input value={pName} onChange={e=>setPName(e.target.value)} placeholder="New Project Name" className="flex-1 bg-gray-950 text-white text-xs p-2 rounded border border-gray-700"/>
-                   <button onClick={()=>{if(pName) {onSave(pName); setPName('')}}} className="bg-blue-600 text-white px-3 rounded text-xs">Save</button>
+                   <input value={pName} onChange={e=>setPName(e.target.value)} placeholder="新規プロジェクト名" className="flex-1 bg-gray-950 text-white text-sm p-2 rounded border border-gray-700"/>
+                   <button onClick={()=>{if(pName) {onSave(pName); setPName('')}}} className="bg-blue-600 text-white px-4 rounded text-sm font-bold">保存</button>
                  </div>
                  <div className="flex gap-2">
                    <button onClick={()=>{
                      const blob = new Blob([JSON.stringify(projects,null,2)], {type:'application/json'});
                      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
-                   }} className="flex-1 bg-gray-800 border border-gray-600 text-gray-300 py-1 rounded text-xs flex justify-center gap-1"><Icons.Download size={12}/> Backup</button>
-                   <button onClick={()=>fileRef.current.click()} className="flex-1 bg-gray-800 border border-gray-600 text-gray-300 py-1 rounded text-xs flex justify-center gap-1"><Icons.Upload size={12}/> Restore</button>
+                   }} className="flex-1 bg-gray-800 border border-gray-600 text-gray-300 py-2 rounded text-xs flex justify-center items-center gap-1"><Icons.Download size={14}/> バックアップ</button>
+                   <button onClick={()=>fileRef.current.click()} className="flex-1 bg-gray-800 border border-gray-600 text-gray-300 py-2 rounded text-xs flex justify-center items-center gap-1"><Icons.Upload size={14}/> 復元</button>
                    <input type="file" ref={fileRef} className="hidden" accept=".json" onChange={e=>{
-                     const r = new FileReader(); r.onload=ev=>{ try{onImport(JSON.parse(ev.target.result)); alert('Restored!');}catch(err){alert('Error');} }; r.readAsText(e.target.files[0]); e.target.value='';
+                     const r = new FileReader(); r.onload=ev=>{ try{onImport(JSON.parse(ev.target.result)); alert('復元しました！');}catch(err){alert('エラーが発生しました');} }; r.readAsText(e.target.files[0]); e.target.value='';
                    }}/>
                  </div>
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                {projects.length === 0 && <div className="text-gray-500 text-center mt-10 text-sm">保存されたプロジェクトはありません</div>}
                 {projects.map(p => (
-                  <div key={p.id} className="bg-gray-800 p-2 rounded flex justify-between items-center group">
-                    <div onClick={()=>{if(confirm('Load '+p.name+'?')) {onLoad(p); onClose();}}} className="flex-1 cursor-pointer">
+                  <div key={p.id} className="bg-gray-800 p-3 rounded flex justify-between items-center group active:scale-95 transition-transform">
+                    <div onClick={()=>{if(confirm('「'+p.name+'」を開きますか？\n現在の内容は失われます。')) {onLoad(p); onClose();}}} className="flex-1 cursor-pointer">
                       <div className="text-sm text-gray-200 font-bold">{p.name}</div>
-                      <div className="text-[10px] text-gray-500">{new Date(p.createdAt).toLocaleDateString()} • {p.files.length} files</div>
+                      <div className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleDateString()} • {p.files.length} ファイル</div>
                     </div>
-                    <button onClick={()=>confirm('Delete?') && onDelete(p.id)} className="text-gray-600 hover:text-red-400 p-1"><Icons.Trash2 size={14}/></button>
+                    <button onClick={()=>confirm('本当に削除しますか？') && onDelete(p.id)} className="text-gray-500 hover:text-red-400 p-2"><Icons.Trash2 size={16}/></button>
                   </div>
                 ))}
               </div>
               <div className="p-3 border-t border-gray-800">
-                <button onClick={()=>confirm('Delete ALL?') && onClear()} className="w-full text-red-500 text-xs py-2 border border-red-900/30 rounded hover:bg-red-900/10">Clear All Data</button>
+                <button onClick={()=>confirm('全てのデータを削除しますか？\nこの操作は取り消せません。') && onClear()} className="w-full text-red-500 text-sm py-3 border border-red-900/30 rounded hover:bg-red-900/10">全データ削除</button>
               </div>
             </div>
           </div>
         );
       };
 
+      // --- メインアプリ ---
       const App = () => {
+        // デフォルトファイル
         const [files, setFiles] = useState([
           {id:'1', name:'index.html', language:'html', content:'<div id="root"></div>'},
           {id:'2', name:'style.css', language:'css', content:'body { @apply bg-gray-100 flex items-center justify-center min-h-screen; }'},
-          {id:'3', name:'app.tsx', language:'typescript', content:'const App = () => (\n  <div className="p-10 bg-white rounded shadow-xl text-center">\n    <h1 className="text-3xl font-bold text-blue-600">Offline App</h1>\n    <p className="text-gray-600 mt-2">React + TS + Tailwind works offline!</p>\n  </div>\n);\nReactDOM.createRoot(document.getElementById("root")).render(<App />);'}
+          {id:'3', name:'app.tsx', language:'typescript', content:'const App = () => (\n  <div className="p-8 bg-white rounded-lg shadow-xl text-center">\n    <h1 className="text-2xl font-bold text-blue-600 mb-2">CodePlay AI</h1>\n    <p className="text-gray-600">日本語UI & スマホ対応版</p>\n  </div>\n);\nReactDOM.createRoot(document.getElementById("root")).render(<App />);'}
         ]);
         const [activeId, setActiveId] = useState('3');
         const [prompt, setPrompt] = useState('');
         const [loading, setLoading] = useState(false);
         const [sidebar, setSidebar] = useState(false);
+        
+        // スマホ用タブ状態 (files | editor | preview)
+        const [mobileTab, setMobileTab] = useState('editor'); 
+        // 画面幅監視
+        const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
         const [projects, setProjects] = useState(() => { try { return JSON.parse(localStorage.getItem('cp_offline_projects')||'[]'); } catch{ return []; } });
         
-        useEffect(() => localStorage.setItem('cp_offline_projects', JSON.stringify(projects)), [projects]);
+        useEffect(() => {
+          localStorage.setItem('cp_offline_projects', JSON.stringify(projects));
+          const handleResize = () => setIsMobile(window.innerWidth < 768);
+          window.addEventListener('resize', handleResize);
+          return () => window.removeEventListener('resize', handleResize);
+        }, [projects]);
 
         const generateCode = async () => {
-          if(!navigator.onLine) { alert('AI生成機能はインターネット接続が必要です。'); return; }
+          if(!navigator.onLine) { alert('AI生成機能を使うにはインターネット接続が必要です。'); return; }
           if(!prompt) return;
           setLoading(true);
           try {
             let key = localStorage.getItem('gemini_key');
-            if(!key) { key = prompt('Gemini API Key:'); if(key) localStorage.setItem('gemini_key', key); }
-            if(!key) throw new Error('No Key');
+            if(!key) { key = prompt('Gemini APIキーを入力してください:'); if(key) localStorage.setItem('gemini_key', key); }
+            if(!key) throw new Error('APIキーがありません');
             
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
               method: 'POST',
@@ -253,13 +276,21 @@
               const newFiles = parsed.files.map(f => ({id: generateId(), name: f.name, language: f.language || 'javascript', content: f.content}));
               setFiles(newFiles);
               setActiveId(newFiles[0].id);
+              if(isMobile) setMobileTab('preview'); // 生成後はプレビューへ
             }
-          } catch(e) { alert('Generation failed: ' + e.message); }
+          } catch(e) { alert('生成に失敗しました: ' + e.message); }
           setLoading(false);
         };
 
+        const handleSelectFile = (id) => {
+          setActiveId(id);
+          if(isMobile) setMobileTab('editor'); // スマホならエディタへ移動
+        };
+
+        const activeFile = files.find(f => f.id === activeId);
+
         return (
-          <div className="flex flex-col h-screen text-white font-sans">
+          <div className="flex flex-col h-full text-white font-sans bg-gray-900">
             <Sidebar isOpen={sidebar} onClose={()=>setSidebar(false)} projects={projects} 
               onSave={(n)=>setProjects(p=>[{id:generateId(), name:n, files:[...files], createdAt:Date.now()},...p])} 
               onLoad={(p)=>setFiles(p.files.map(f=>({...f})))} 
@@ -268,25 +299,51 @@
               onImport={(imp)=>setProjects(p=>[...imp, ...p])}
             />
             
-            <header className="bg-editor-sidebar border-b border-gray-800 p-2 flex items-center justify-between shrink-0">
+            {/* ヘッダー */}
+            <header className="bg-editor-sidebar border-b border-gray-800 p-2 flex items-center justify-between shrink-0 h-14 z-10">
                <div className="flex items-center gap-3">
-                 <button onClick={()=>setSidebar(true)} className="p-2 hover:bg-gray-700 rounded text-gray-400"><Icons.Folder size={20}/></button>
-                 <span className="font-bold hidden sm:block">CodePlay Offline</span>
+                 <button onClick={()=>setSidebar(true)} className="p-2 hover:bg-gray-700 rounded text-gray-400"><Icons.Menu size={24}/></button>
+                 <span className="font-bold hidden sm:block text-lg">CodePlay</span>
                </div>
-               <div className="flex-1 max-w-xl mx-4 flex gap-2">
-                 <input value={prompt} onChange={e=>setPrompt(e.target.value)} onKeyDown={e=>e.key==='Enter'&&generateCode()} placeholder={navigator.onLine ? "AI Generate..." : "AI Offline"} disabled={!navigator.onLine} className="flex-1 bg-gray-950 border border-gray-700 rounded px-3 text-sm focus:border-blue-500 outline-none disabled:opacity-50"/>
-                 <button onClick={generateCode} disabled={loading||!navigator.onLine} className="bg-blue-600 px-3 rounded text-xs font-bold disabled:opacity-50">{loading?<Icons.RefreshCw className="animate-spin"/>:<Icons.Wand2/>}</button>
+               <div className="flex-1 max-w-xl mx-2 sm:mx-4 flex gap-2">
+                 <input value={prompt} onChange={e=>setPrompt(e.target.value)} onKeyDown={e=>e.key==='Enter'&&generateCode()} placeholder={navigator.onLine ? "何を作りますか？ (AI生成)" : "オフライン編集中"} disabled={!navigator.onLine} className="flex-1 bg-gray-950 border border-gray-700 rounded px-3 text-sm focus:border-blue-500 outline-none disabled:opacity-50 h-9"/>
+                 <button onClick={generateCode} disabled={loading||!navigator.onLine} className="bg-blue-600 px-3 rounded text-sm font-bold disabled:opacity-50 h-9 w-10 flex items-center justify-center">{loading?<Icons.RefreshCw className="animate-spin"/>:<Icons.Wand2/>}</button>
                </div>
-               <button onClick={()=>confirm('Reset?')&&setFiles([])}><Icons.RotateCcw size={18} className="text-gray-400 hover:text-red-400"/></button>
+               <button onClick={()=>confirm('初期状態に戻しますか？')&&setFiles([])}><Icons.RotateCcw size={20} className="text-gray-400 hover:text-red-400 p-1"/></button>
             </header>
 
-            <main className="flex-1 flex overflow-hidden">
-               <FileExplorer files={files} activeFileId={activeId} onSelect={setActiveId} onAdd={(n,l)=>setFiles([...files, {id:generateId(), name:n, language:l, content:''} ])} onDelete={(id)=>{if(confirm('Delete?')) setFiles(f=>f.filter(x=>x.id!==id)); if(activeId===id) setActiveId(null);}} />
-               <div className="flex-1 flex flex-col min-w-0 border-r border-gray-800 max-w-[50%]">
-                 <Editor file={files.find(f=>f.id===activeId)} onChange={(val)=>setFiles(files.map(f=>f.id===activeId?{...f, content:val}:f))} />
+            {/* メインエリア (スマホ対応レイアウト) */}
+            <main className="flex-1 flex overflow-hidden relative">
+               
+               {/* ファイル一覧 (PC:常時表示 / スマホ:タブ選択時のみ) */}
+               <div className={`${isMobile && mobileTab !== 'files' ? 'hidden' : 'flex'} w-full md:w-56 md:flex-none flex-col h-full`}>
+                  <FileExplorer files={files} activeFileId={activeId} onSelect={handleSelectFile} onAdd={(n,l)=>setFiles([...files, {id:generateId(), name:n, language:l, content:''} ])} onDelete={(id)=>{if(confirm('削除しますか？')) setFiles(f=>f.filter(x=>x.id!==id)); if(activeId===id) setActiveId(null);}} />
                </div>
-               <div className="flex-1 bg-white flex flex-col"><Preview files={files} /></div>
+
+               {/* エディタ (PC:常時表示 / スマホ:タブ選択時のみ) */}
+               <div className={`${isMobile && mobileTab !== 'editor' ? 'hidden' : 'flex'} flex-1 flex-col min-w-0 md:border-r border-gray-800 md:max-w-[50%]`}>
+                 <Editor file={activeFile} onChange={(val)=>setFiles(files.map(f=>f.id===activeId?{...f, content:val}:f))} />
+               </div>
+
+               {/* プレビュー (PC:常時表示 / スマホ:タブ選択時のみ) */}
+               <div className={`${isMobile && mobileTab !== 'preview' ? 'hidden' : 'flex'} flex-1 flex-col bg-white h-full`}>
+                  <Preview files={files} />
+               </div>
+
             </main>
+
+            {/* スマホ用ボトムナビゲーション (PCでは非表示) */}
+            <div className="md:hidden h-14 bg-editor-sidebar border-t border-gray-800 flex items-center justify-around shrink-0 pb-safe">
+              <button onClick={()=>setMobileTab('files')} className={`flex flex-col items-center gap-1 p-1 ${mobileTab==='files'?'text-blue-400':'text-gray-500'}`}>
+                <Icons.List size={20}/> <span className="text-[10px]">ファイル</span>
+              </button>
+              <button onClick={()=>setMobileTab('editor')} className={`flex flex-col items-center gap-1 p-1 ${mobileTab==='editor'?'text-blue-400':'text-gray-500'}`}>
+                <Icons.Code size={20}/> <span className="text-[10px]">コード</span>
+              </button>
+              <button onClick={()=>setMobileTab('preview')} className={`flex flex-col items-center gap-1 p-1 ${mobileTab==='preview'?'text-blue-400':'text-gray-500'}`}>
+                <Icons.Play size={20}/> <span className="text-[10px]">プレビュー</span>
+              </button>
+            </div>
           </div>
         );
       };
