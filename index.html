@@ -138,8 +138,20 @@
           if(doc.includes('</head>')) doc = doc.replace('</head>', `${styleTag}</head>`);
           else doc = styleTag + doc;
 
+          // ★ここに修正を加えました。Tailwind設定をプレビュー内にも注入しています。
           const libs = `
             <script src="tailwind.js"><\/script>
+            <script>
+              // 親ウィンドウと同じTailwind設定をプレビューにも適用
+              tailwind.config = {
+                theme: {
+                  extend: {
+                    fontFamily: { sans: ['sans-serif'], mono: ['monospace'] },
+                    colors: { editor: { bg: '#1e1e1e', sidebar: '#252526', active: '#37373d', border: '#333' } }
+                  },
+                },
+              }
+            <\/script>
             <script src="react.js"><\/script>
             <script src="react-dom.js"><\/script>
             <!-- Python用ライブラリ -->
