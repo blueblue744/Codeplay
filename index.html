@@ -4,20 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>CodePlay Editor</title>
-    
-    <!-- PWA / ホーム画面アイコン設定 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="CodePlay">
     
-    <!-- アプリアイコン (キャッシュ対策のため ?v=3 に変更) -->
-    <link rel="icon" type="image/png" href="icon.png?v=3">
-    <link rel="apple-touch-icon" href="icon.png?v=3">
-    
-    <!-- マニフェスト -->
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ29kZVBsYXkgRWRpdG9yIiwic2hvcnRfbmFtZSI6IkNvZGVQbGF5IiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzExMTgyNyIsInRoZW1lX2NvbG9yIjoiIzExMTgyNyIsImljb25zIjpbeyJzcmMiOiJpY29uLnBuZz92PTMiLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
+    <link rel="icon" type="image/png" href="icon.png?v=4">
+    <link rel="apple-touch-icon" href="icon.png?v=4">
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ29kZVBsYXkgRWRpdG9yIiwic2hvcnRfbmFtZSI6IkNvZGVQbGF5IiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzExMTgyNyIsInRoZW1lX2NvbG9yIjoiIzExMTgyNyIsImljb25zIjpbeyJzcmMiOiJpY29uLnBuZz92PTQiLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
 
-    <!-- ローカルライブラリ読み込み -->
     <script src="tailwind.js"></script>
     <script>
       tailwind.config = {
@@ -48,7 +42,6 @@
     <script type="text/babel" data-presets="react,typescript">
       const { useState, useEffect, useRef } = React;
 
-      // --- アイコン (SVG) ---
       const Icon = ({ path, size = 18, className = "" }) => (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: path }} />
       );
@@ -70,7 +63,6 @@
 
       const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-      // --- エディタ画面 ---
       const Editor = ({ file, onChange }) => {
         const textareaRef = useRef(null);
         useEffect(() => { if (textareaRef.current) textareaRef.current.scrollTop = 0; }, [file?.id]);
@@ -86,12 +78,7 @@
           }
         };
 
-        const handleSelectAll = () => {
-          if (textareaRef.current) {
-            textareaRef.current.focus();
-            textareaRef.current.select();
-          }
-        };
+        const handleSelectAll = () => { if (textareaRef.current) { textareaRef.current.focus(); textareaRef.current.select(); } };
 
         if (!file) return <div className="flex-1 flex flex-col items-center justify-center text-gray-500 bg-editor-bg h-full"><Icons.Code size={48} className="mb-4 opacity-20" /><p>ファイルを選択してください</p></div>;
 
@@ -118,27 +105,35 @@
         );
       };
 
-      // --- プレビュー画面 ---
+      // --- プレビュー画面 (Python対応) ---
       const Preview = ({ files }) => {
         const [srcDoc, setSrcDoc] = useState('');
         
         useEffect(() => {
-          const htmlFile = files.find(f => f.name === 'index.html');
-          if (!htmlFile) { setSrcDoc('<html><body style="color:#888;background:#111;padding:20px;font-family:sans-serif;">index.html が見つかりません。<br>ファイルを追加してください。</body></html>'); return; }
-
+          // HTMLがない場合、自動的にHTMLラッパーを生成する
+          let htmlFile = files.find(f => f.name === 'index.html');
+          
+          // CSS, JS, Pythonファイルを収集
           const allCss = files.filter(f => f.name.endsWith('.css')).map(f => `/* ${f.name} */\n${f.content}`).join('\n');
           const allJs = files.filter(f => f.name.endsWith('.js')).map(f => `// ${f.name}\ntry{${f.content.replace(/import .*?;/g,'')}}catch(e){console.error(e)}`).join('\n');
+          const allPy = files.filter(f => f.name.endsWith('.py')).map(f => `<script type="text/python">\n# ${f.name}\n${f.content}\n<\/script>`).join('\n');
           
           let tsCompiled = '';
           if (window.Babel) {
             files.filter(f => f.name.endsWith('.ts') || f.name.endsWith('.tsx')).forEach(f => {
-              try {
-                tsCompiled += `// ${f.name}\n` + window.Babel.transform(f.content, { presets: ['react', 'typescript'], filename: f.name }).code + '\n';
-              } catch(e) { console.error('Compile Error in ' + f.name, e); }
+              try { tsCompiled += `// ${f.name}\n` + window.Babel.transform(f.content, { presets: ['react', 'typescript'], filename: f.name }).code + '\n'; } 
+              catch(e) { console.error('Compile Error in ' + f.name, e); }
             });
           }
 
-          let doc = htmlFile.content;
+          let doc = htmlFile ? htmlFile.content : `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><div id="root"></div></body></html>`;
+
+          // Pythonがある場合、bodyタグに onload="brython()" を追加
+          if (allPy && !doc.includes('onload="brython()"')) {
+              if (doc.includes('<body')) doc = doc.replace('<body', '<body onload="brython()"');
+              else doc = doc.replace('<body>', '<body onload="brython()">');
+          }
+
           const styleTag = `<style>${allCss}</style>`;
           if(doc.includes('</head>')) doc = doc.replace('</head>', `${styleTag}</head>`);
           else doc = styleTag + doc;
@@ -147,11 +142,14 @@
             <script src="tailwind.js"><\/script>
             <script src="react.js"><\/script>
             <script src="react-dom.js"><\/script>
+            <!-- Python用ライブラリ -->
+            <script src="brython.js"><\/script>
+            <script src="brython_stdlib.js"><\/script>
           `;
           if(doc.includes('<head>')) doc = doc.replace('<head>', `<head>${libs}`);
           else doc = libs + doc;
 
-          const scriptTag = `<script>${allJs}\n${tsCompiled}<\/script>`;
+          const scriptTag = `<script>${allJs}\n${tsCompiled}<\/script>\n${allPy}`;
           if(doc.includes('</body>')) doc = doc.replace('</body>', `${scriptTag}</body>`);
           else doc += scriptTag;
 
@@ -161,7 +159,6 @@
         return <iframe srcDoc={srcDoc} className="flex-1 w-full h-full bg-white border-none" sandbox="allow-scripts allow-modals allow-same-origin" title="Preview" />;
       };
 
-      // --- ファイル管理 ---
       const FileExplorer = ({ files, activeFileId, onSelect, onAdd, onDelete, onUpload }) => {
         const [name, setName] = useState('');
         const [isAdding, setIsAdding] = useState(false);
@@ -175,6 +172,7 @@
           if(name.endsWith('.css')) lang = 'css';
           if(name.endsWith('.json')) lang = 'json';
           if(name.endsWith('.ts') || name.endsWith('.tsx')) lang = 'typescript';
+          if(name.endsWith('.py')) lang = 'python'; // Python対応
           
           onAdd(name, lang, '');
           setName(''); setIsAdding(false);
@@ -191,15 +189,12 @@
                 else if(file.name.endsWith('.css')) lang = 'css';
                 else if(file.name.endsWith('.json')) lang = 'json';
                 else if(file.name.endsWith('.ts') || file.name.endsWith('.tsx')) lang = 'typescript';
+                else if(file.name.endsWith('.py')) lang = 'python';
                 else if(file.type.startsWith('image/')) lang = 'image';
-                
                 onUpload(file.name, content, lang);
              };
-             if (file.type.startsWith('image/')) {
-                 reader.readAsDataURL(file);
-             } else {
-                 reader.readAsText(file);
-             }
+             if (file.type.startsWith('image/')) reader.readAsDataURL(file);
+             else reader.readAsText(file);
           });
           e.target.value = '';
         };
@@ -220,7 +215,7 @@
              </div>
              {isAdding && (
                <form onSubmit={handleSubmit} className="p-2 bg-gray-800 shrink-0 border-b border-editor-border">
-                 <input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-gray-900 text-white text-sm p-2 rounded outline-none border border-blue-500" placeholder="例: style.css" autoFocus onBlur={()=>{if(!name)setIsAdding(false)}}/>
+                 <input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-gray-900 text-white text-sm p-2 rounded outline-none border border-blue-500" placeholder="例: main.py" autoFocus onBlur={()=>{if(!name)setIsAdding(false)}}/>
                </form>
              )}
              <div className="flex-1 overflow-y-auto">
@@ -235,42 +230,21 @@
         );
       };
 
-      // --- サイドバー ---
       const Sidebar = ({ isOpen, onClose, projects, onSave, onLoad, onDelete, onClear, onImportJSON }) => {
         const fileInputRef = useRef(null);
-
         const handleExportJSON = () => {
-          const dataStr = JSON.stringify(projects, null, 2);
-          const blob = new Blob([dataStr], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
+          const blob = new Blob([JSON.stringify(projects, null, 2)], { type: "application/json" });
           const link = document.createElement('a');
-          link.href = url;
+          link.href = URL.createObjectURL(blob);
           link.download = `codeplay_backup_${new Date().toISOString().slice(0,10)}.json`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
-
-        const handleImportClick = () => fileInputRef.current?.click();
         const handleFileChange = (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
           const reader = new FileReader();
           reader.onload = (event) => {
-            try {
-              const json = JSON.parse(event.target.result);
-              if (Array.isArray(json)) {
-                onImportJSON(json);
-                alert("復元しました！");
-              } else {
-                alert("ファイルの形式が正しくありません。");
-              }
-            } catch (err) {
-              alert("読み込みエラー: " + err);
-            }
+            try { onImportJSON(JSON.parse(event.target.result)); alert("復元しました！"); } catch { alert("エラー"); }
           };
-          reader.readAsText(file);
-          e.target.value = '';
+          reader.readAsText(e.target.files[0]); e.target.value = '';
         };
 
         if(!isOpen) return null;
@@ -282,29 +256,19 @@
                         <span className="text-white font-bold flex gap-2 items-center"><Icons.Folder size={20} className="text-blue-500"/> プロジェクト</span>
                         <button onClick={onClose}><Icons.X size={20} className="text-gray-400"/></button>
                     </div>
-                    
                     <div className="p-4 space-y-3 border-b border-gray-800">
-                         <button onClick={()=>{
-                             const name = prompt('プロジェクト名を入力:');
-                             if(name) onSave(name);
-                         }} className="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold hover:bg-blue-500">保存する</button>
-
+                         <button onClick={()=>{const n=prompt('プロジェクト名:'); if(n) onSave(n)}} className="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold hover:bg-blue-500">保存する</button>
                          <div className="flex gap-2">
-                            <button onClick={handleExportJSON} className="flex-1 bg-gray-800 text-gray-300 py-2 rounded text-xs flex items-center justify-center gap-1 border border-gray-700">
-                                <Icons.Download size={14}/> バックアップ
-                            </button>
-                            <button onClick={handleImportClick} className="flex-1 bg-gray-800 text-gray-300 py-2 rounded text-xs flex items-center justify-center gap-1 border border-gray-700">
-                                <Icons.Upload size={14}/> 復元
-                            </button>
+                            <button onClick={handleExportJSON} className="flex-1 bg-gray-800 text-gray-300 py-2 rounded text-xs flex items-center justify-center gap-1 border border-gray-700"><Icons.Download size={14}/> バックアップ</button>
+                            <button onClick={()=>fileInputRef.current.click()} className="flex-1 bg-gray-800 text-gray-300 py-2 rounded text-xs flex items-center justify-center gap-1 border border-gray-700"><Icons.Upload size={14}/> 復元</button>
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
                          </div>
                     </div>
-
                     <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                        {projects.length === 0 && <div className="text-center text-gray-500 text-xs mt-10">保存されたプロジェクトはありません</div>}
+                        {projects.length===0 && <div className="text-center text-gray-500 text-xs mt-10">なし</div>}
                         {projects.map(p => (
                             <div key={p.id} className="bg-gray-800 p-3 rounded flex justify-between items-center group">
-                                <div onClick={()=>{if(confirm('読み込みますか？')) {onLoad(p); onClose();}}} className="flex-1 cursor-pointer">
+                                <div onClick={()=>{if(confirm('読み込みますか？')){onLoad(p);onClose()}}} className="flex-1 cursor-pointer">
                                     <div className="text-sm font-bold text-gray-200">{p.name}</div>
                                     <div className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</div>
                                 </div>
@@ -312,27 +276,20 @@
                             </div>
                         ))}
                     </div>
-                    <div className="p-4 border-t border-gray-800">
-                        <button onClick={onClear} className="w-full text-red-500 text-xs py-2 border border-red-900/30 rounded">履歴を全消去</button>
-                    </div>
+                    <div className="p-4 border-t border-gray-800"><button onClick={onClear} className="w-full text-red-500 text-xs py-2 border border-red-900/30 rounded">全消去</button></div>
                 </div>
             </div>
         );
       };
 
-      // --- メインアプリ ---
       const App = () => {
-        // ★デフォルトファイルを空にする
-        const INITIAL_FILES = [
-          {id:'1', name:'index.html', language:'html', content:''},
-          {id:'2', name:'style.css', language:'css', content:''},
-          {id:'3', name:'script.js', language:'javascript', content:''}
-        ];
+        // ★完全な空っぽで開始
+        const INITIAL_FILES = [];
 
         const [files, setFiles] = useState(INITIAL_FILES);
-        const [activeId, setActiveId] = useState('1');
+        const [activeId, setActiveId] = useState(null);
         const [sidebarOpen, setSidebarOpen] = useState(false);
-        const [mobileTab, setMobileTab] = useState('editor');
+        const [mobileTab, setMobileTab] = useState('files'); // ファイル一覧からスタート
         const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
         const [projects, setProjects] = useState(() => { try { return JSON.parse(localStorage.getItem('cp_projects')||'[]'); } catch{ return []; } });
@@ -347,80 +304,41 @@
 
         return (
           <div className="flex flex-col h-full text-white font-sans bg-gray-900">
-            
-            {/* ヘッダー */}
             <header className="bg-editor-sidebar border-b border-editor-border p-1 flex items-center justify-between shrink-0 h-16 z-20 shadow-md">
                <div className="flex items-center gap-2 pl-1">
                  <button onClick={()=>setSidebarOpen(true)} className="flex flex-col items-center justify-center p-2 text-gray-400 hover:text-white rounded hover:bg-gray-700 w-14">
-                   <Icons.Menu size={20}/>
-                   <span className="text-[10px] mt-0.5">メニュー</span>
+                   <Icons.Menu size={20}/> <span className="text-[10px] mt-0.5">メニュー</span>
                  </button>
-                 
                  <div className="flex flex-col justify-center">
                    <span className="font-bold text-base tracking-tight leading-tight">CodePlay</span>
                    <span className="text-[10px] text-gray-500 leading-tight">Editor</span>
                  </div>
                </div>
-               
                <div className="flex items-center gap-1 pr-1">
-                 <button onClick={()=>{if(confirm('現在のコードをリセットしますか？')) setFiles(INITIAL_FILES)}} className="flex flex-col items-center justify-center p-2 text-gray-400 hover:text-white rounded hover:bg-gray-700 w-14">
-                    <Icons.RotateCcw size={18}/>
-                    <span className="text-[10px] mt-0.5">リセット</span>
+                 <button onClick={()=>{if(confirm('リセットしますか？')){setFiles(INITIAL_FILES); setActiveId(null);}}} className="flex flex-col items-center justify-center p-2 text-gray-400 hover:text-white rounded hover:bg-gray-700 w-14">
+                    <Icons.RotateCcw size={18}/> <span className="text-[10px] mt-0.5">リセット</span>
                  </button>
                </div>
             </header>
 
-            {/* メインコンテンツ */}
             <main className="flex-1 flex overflow-hidden relative">
-               
-               {/* 1. ファイル一覧 */}
                <div className={`${(isMobile && mobileTab !== 'files') ? 'hidden' : 'flex'} w-full md:w-56 md:flex-none flex-col h-full z-10 border-r border-editor-border bg-editor-sidebar`}>
-                  <FileExplorer 
-                    files={files} 
-                    activeFileId={activeId} 
-                    onSelect={(id)=>{setActiveId(id); if(isMobile) setMobileTab('editor');}} 
-                    onAdd={(n,l,c)=>setFiles([...files, {id:generateId(), name:n, language:l, content:c||''} ])} 
-                    onDelete={(id)=>{setFiles(f=>f.filter(x=>x.id!==id)); if(activeId===id) setActiveId(null);}} 
-                    onUpload={(n,c,l)=>setFiles(prev=>[...prev, {id:generateId(), name:n, language:l, content:c}])}
-                  />
+                  <FileExplorer files={files} activeFileId={activeId} onSelect={(id)=>{setActiveId(id); if(isMobile) setMobileTab('editor');}} onAdd={(n,l,c)=>setFiles([...files, {id:generateId(), name:n, language:l, content:c||''} ])} onDelete={(id)=>{setFiles(f=>f.filter(x=>x.id!==id)); if(activeId===id) setActiveId(null);}} onUpload={(n,c,l)=>setFiles(prev=>[...prev, {id:generateId(), name:n, language:l, content:c}])} />
                </div>
-
-               {/* 2. エディタ */}
                <div className={`${(isMobile && mobileTab !== 'editor') ? 'hidden' : 'flex'} flex-1 flex-col min-w-0 md:border-r border-editor-border md:max-w-[50%]`}>
                  <Editor file={activeFile} onChange={(val)=>setFiles(files.map(f=>f.id===activeId?{...f, content:val}:f))} />
                </div>
-
-               {/* 3. プレビュー */}
                <div className={`${(isMobile && mobileTab !== 'preview') ? 'hidden' : 'flex'} flex-1 flex-col bg-white h-full`}>
                   <Preview files={files} />
                </div>
-
             </main>
 
-            {/* スマホ用ボトムタブ */}
             <div className="md:hidden h-16 bg-editor-sidebar border-t border-editor-border flex items-center justify-around shrink-0 pb-safe z-30">
-              <button onClick={()=>setMobileTab('files')} className={`flex flex-col items-center justify-center gap-0.5 w-full h-full ${mobileTab==='files'?'text-blue-400 bg-gray-800':'text-gray-500'}`}>
-                <Icons.List size={20}/> <span className="text-[10px]">ファイル</span>
-              </button>
-              <button onClick={()=>setMobileTab('editor')} className={`flex flex-col items-center justify-center gap-0.5 w-full h-full ${mobileTab==='editor'?'text-blue-400 bg-gray-800':'text-gray-500'}`}>
-                <Icons.Code size={20}/> <span className="text-[10px]">コード</span>
-              </button>
-              <button onClick={()=>setMobileTab('preview')} className={`flex flex-col items-center justify-center gap-0.5 w-full h-full ${mobileTab==='preview'?'text-blue-400 bg-gray-800':'text-gray-500'}`}>
-                <Icons.Play size={20}/> <span className="text-[10px]">プレビュー</span>
-              </button>
+              <button onClick={()=>setMobileTab('files')} className={`flex flex-col items-center justify-center gap-0.5 w-full h-full ${mobileTab==='files'?'text-blue-400 bg-gray-800':'text-gray-500'}`}><Icons.List size={20}/> <span className="text-[10px]">ファイル</span></button>
+              <button onClick={()=>setMobileTab('editor')} className={`flex flex-col items-center justify-center gap-0.5 w-full h-full ${mobileTab==='editor'?'text-blue-400 bg-gray-800':'text-gray-500'}`}><Icons.Code size={20}/> <span className="text-[10px]">コード</span></button>
+              <button onClick={()=>setMobileTab('preview')} className={`flex flex-col items-center justify-center gap-0.5 w-full h-full ${mobileTab==='preview'?'text-blue-400 bg-gray-800':'text-gray-500'}`}><Icons.Play size={20}/> <span className="text-[10px]">プレビュー</span></button>
             </div>
-
-            {/* サイドバー */}
-            <Sidebar 
-                isOpen={sidebarOpen} 
-                onClose={()=>setSidebarOpen(false)} 
-                projects={projects}
-                onSave={(n)=>setProjects(prev => [{id:generateId(), name:n, files:[...files], createdAt:Date.now()}, ...prev])}
-                onLoad={(p)=>setFiles(p.files)}
-                onDelete={(id)=>setProjects(p=>p.filter(x=>x.id!==id))}
-                onClear={()=>{if(confirm('全削除しますか？')) setProjects([])}}
-                onImportJSON={(json)=>setProjects(prev => [...json, ...prev])}
-            />
+            <Sidebar isOpen={sidebarOpen} onClose={()=>setSidebarOpen(false)} projects={projects} onSave={(n)=>setProjects(prev => [{id:generateId(), name:n, files:[...files], createdAt:Date.now()}, ...prev])} onLoad={(p)=>{setFiles(p.files); setActiveId(p.files[0]?.id)}} onDelete={(id)=>setProjects(p=>p.filter(x=>x.id!==id))} onClear={()=>{if(confirm('全削除しますか？')) setProjects([])}} onImportJSON={(json)=>setProjects(prev => [...json, ...prev])} />
           </div>
         );
       };
