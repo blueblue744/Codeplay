@@ -10,12 +10,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="CodePlay">
     
-    <!-- アプリアイコン (?v=2 を付けて更新を強制) -->
-    <link rel="icon" type="image/png" href="icon.png?v=2">
-    <link rel="apple-touch-icon" href="icon.png?v=2">
+    <!-- アプリアイコン (キャッシュ対策のため ?v=3 に変更) -->
+    <link rel="icon" type="image/png" href="icon.png?v=3">
+    <link rel="apple-touch-icon" href="icon.png?v=3">
     
-    <!-- マニフェスト (icon.png?v=2 を指すように更新) -->
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ29kZVBsYXkgRWRpdG9yIiwic2hvcnRfbmFtZSI6IkNvZGVQbGF5IiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzExMTgyNyIsInRoZW1lX2NvbG9yIjoiIzExMTgyNyIsImljb25zIjpbeyJzcmMiOiJpY29uLnBuZz92PTIiLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
+    <!-- マニフェスト -->
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ29kZVBsYXkgRWRpdG9yIiwic2hvcnRfbmFtZSI6IkNvZGVQbGF5IiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzExMTgyNyIsInRoZW1lX2NvbG9yIjoiIzExMTgyNyIsImljb25zIjpbeyJzcmMiOiJpY29uLnBuZz92PTMiLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
 
     <!-- ローカルライブラリ読み込み -->
     <script src="tailwind.js"></script>
@@ -39,7 +39,6 @@
       ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
       body { margin: 0; overflow: hidden; background-color: #111827; touch-action: manipulation; }
       input, textarea, button { font-size: 14px; }
-      /* プレースホルダーの色調整 */
       textarea::placeholder { color: #555; opacity: 1; }
     </style>
   </head>
