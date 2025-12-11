@@ -53,9 +53,10 @@
       const Icons = {
         Menu: (p) => <Icon {...p} path='<line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/>' />,
         Plus: (p) => <Icon {...p} path='<path d="M5 12h14"/><path d="M12 5v14"/>' />,
+        NewFolder: (p) => <Icon {...p} path='<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" x2="12" y1="11" y2="17"/><line x1="9" x2="15" y1="14" y2="14"/>' />,
         Trash2: (p) => <Icon {...p} path='<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>' />,
         Folder: (p) => <Icon {...p} path='<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>' />,
-        FolderOpen: (p) => <Icon {...p} path='<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>' />,
+        Edit: (p) => <Icon {...p} path='<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>' />,
         File: (p) => <Icon {...p} path='<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/>' />,
         X: (p) => <Icon {...p} path='<path d="M18 6 6 18"/><path d="m6 6 12 12"/>' />,
         Code: (p) => <Icon {...p} path='<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' />,
@@ -72,7 +73,6 @@
 
       const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-      // --- エディタ画面 ---
       const Editor = ({ file, onChange }) => {
         const textareaRef = useRef(null);
         useEffect(() => { if (textareaRef.current) textareaRef.current.scrollTop = 0; }, [file?.id]);
@@ -122,13 +122,14 @@
           const parts = file.name.split('/');
           let current = root;
           parts.forEach((part, index) => {
+            const currentPath = parts.slice(0, index + 1).join('/');
             if (index === parts.length - 1) {
               // ファイル
               current.children[part] = { ...file, isFolder: false, path: file.name };
             } else {
               // フォルダ
               if (!current.children[part]) {
-                current.children[part] = { name: part, isFolder: true, children: {}, path: current.path ? `${current.path}/${part}` : part };
+                current.children[part] = { name: part, isFolder: true, children: {}, path: currentPath };
               }
               current = current.children[part];
             }
@@ -137,19 +138,22 @@
         return root;
       };
 
-      // --- 再帰的フォルダコンポーネント ---
-      const FileTreeNode = ({ node, activeFileId, onSelect, onDelete, depth = 0 }) => {
+      // --- 再帰的フォルダコンポーネント (リネーム・削除機能追加) ---
+      const FileTreeNode = ({ node, activeFileId, onSelect, onDelete, onRenameFile, onRenameFolder, onDeleteFolder, depth = 0 }) => {
         const [isOpen, setIsOpen] = useState(true);
 
         // ファイルの場合
         if (!node.isFolder) {
           return (
-             <div onClick={() => onSelect(node.id)} className={`flex justify-between items-center py-1.5 pr-2 cursor-pointer text-sm hover:bg-gray-800 ${activeFileId === node.id ? 'bg-editor-active text-white border-l-2 border-l-blue-500' : 'text-gray-400 border-l-2 border-transparent'}`} style={{ paddingLeft: `${depth * 12 + 12}px` }}>
-                <div className="flex items-center gap-1.5 min-w-0">
+             <div onClick={() => onSelect(node.id)} className={`group flex justify-between items-center py-1.5 pr-2 cursor-pointer text-sm hover:bg-gray-800 ${activeFileId === node.id ? 'bg-editor-active text-white border-l-2 border-l-blue-500' : 'text-gray-400 border-l-2 border-transparent'}`} style={{ paddingLeft: `${depth * 12 + 12}px` }}>
+                <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                    <Icons.File size={14} className="shrink-0 opacity-70" />
                    <span className="truncate">{node.name.split('/').pop()}</span>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); if(confirm(`${node.name} を削除しますか？`)) onDelete(node.id); }} className="text-gray-600 hover:text-red-400 p-0.5 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"><Icons.Trash2 size={13} /></button>
+                <div className="flex opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                   <button onClick={(e)=>{e.stopPropagation(); onRenameFile(node);}} className="text-gray-500 hover:text-white"><Icons.Edit size={13}/></button>
+                   <button onClick={(e)=>{e.stopPropagation(); if(confirm(`${node.name} を削除しますか？`)) onDelete(node.id);}} className="text-gray-500 hover:text-red-400"><Icons.Trash2 size={13}/></button>
+                </div>
              </div>
           );
         }
@@ -161,20 +165,26 @@
         });
 
         if (node.name === "root") {
-             return <div className="flex flex-col">{children.map((child) => <FileTreeNode key={child.path} node={child} activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete} depth={0} />)}</div>;
+             return <div className="flex flex-col">{children.map((child) => <FileTreeNode key={child.path} node={child} activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete} onRenameFile={onRenameFile} onRenameFolder={onRenameFolder} onDeleteFolder={onDeleteFolder} depth={0} />)}</div>;
         }
 
         return (
           <div className="flex flex-col select-none">
-            <div onClick={() => setIsOpen(!isOpen)} className={`flex items-center py-1.5 pr-2 cursor-pointer text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors`} style={{ paddingLeft: `${depth * 12 + 6}px` }}>
-              <span className="p-0.5 mr-0.5 text-gray-500">{isOpen ? <Icons.ChevronDown size={14}/> : <Icons.ChevronRight size={14}/>}</span>
-              <Icons.Folder size={14} className="mr-1.5 text-blue-400" />
-              <span className="truncate font-medium">{node.name}</span>
+            <div onClick={() => setIsOpen(!isOpen)} className={`group flex justify-between items-center py-1.5 pr-2 cursor-pointer text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors`} style={{ paddingLeft: `${depth * 12 + 6}px` }}>
+              <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+                  <span className="p-0.5 text-gray-500">{isOpen ? <Icons.ChevronDown size={14}/> : <Icons.ChevronRight size={14}/>}</span>
+                  <Icons.Folder size={14} className="shrink-0 text-blue-400" />
+                  <span className="truncate font-medium">{node.name}</span>
+              </div>
+              <div className="flex opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                  <button onClick={(e)=>{e.stopPropagation(); onRenameFolder(node.path, node.name);}} className="text-gray-500 hover:text-white"><Icons.Edit size={13}/></button>
+                  <button onClick={(e)=>{e.stopPropagation(); if(confirm(`フォルダ ${node.name} と中身を全て削除しますか？`)) onDeleteFolder(node.path);}} className="text-gray-500 hover:text-red-400"><Icons.Trash2 size={13}/></button>
+              </div>
             </div>
             {isOpen && (
               <div className="flex flex-col">
                 {children.map((child) => (
-                  <FileTreeNode key={child.path} node={child} activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete} depth={depth + 1} />
+                  <FileTreeNode key={child.path} node={child} activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete} onRenameFile={onRenameFile} onRenameFolder={onRenameFolder} onDeleteFolder={onDeleteFolder} depth={depth + 1} />
                 ))}
               </div>
             )}
@@ -182,8 +192,7 @@
         );
       };
 
-      // --- サイドバー（ファイル一覧 + ツリー表示） ---
-      const FileExplorer = ({ files, activeFileId, onSelect, onAdd, onDelete, onUpload }) => {
+      const FileExplorer = ({ files, activeFileId, onSelect, onAdd, onDelete, onUpload, onRenameFile, onRenameFolder, onDeleteFolder }) => {
         const [name, setName] = useState('');
         const [isAdding, setIsAdding] = useState(false);
         const fileInputRef = useRef(null);
@@ -196,33 +205,26 @@
           let lang = 'javascript';
           if(name.endsWith('.html')) lang = 'html';
           if(name.endsWith('.css')) lang = 'css';
-          if(name.endsWith('.json')) lang = 'json';
           if(name.endsWith('.ts') || name.endsWith('.tsx')) lang = 'typescript';
           
           onAdd(name, lang, '');
           setName(''); setIsAdding(false);
         };
 
-        const handleFileChange = (e) => {
-          const uploadedFiles = Array.from(e.target.files);
-          uploadedFiles.forEach(file => {
-             const reader = new FileReader();
-             reader.onload = (ev) => {
-                let lang = 'javascript'; 
-                if(file.name.endsWith('.html')) lang = 'html';
-                else if(file.name.endsWith('.css')) lang = 'css';
-                else if(file.name.endsWith('.ts') || file.name.endsWith('.tsx')) lang = 'typescript';
-                onUpload(file.name, ev.target.result, lang);
-             };
-             reader.readAsText(file);
-          });
-          e.target.value = '';
+        const handleCreateFolder = () => {
+          const folderName = prompt("新規フォルダ名:");
+          if (folderName) {
+            // 空フォルダを維持するために.keepファイルを作成
+            onAdd(`${folderName}/.keep`, 'text', '');
+          }
         };
 
         const handleDownloadZip = async () => {
           if (!window.JSZip) { alert('JSZip library not loaded.'); return; }
           const zip = new JSZip();
-          files.forEach(f => zip.file(f.name, f.content));
+          files.forEach(f => {
+              if(!f.name.endsWith('.keep')) zip.file(f.name, f.content);
+          });
           const content = await zip.generateAsync({type: "blob"});
           const link = document.createElement('a');
           link.href = URL.createObjectURL(content);
@@ -230,40 +232,50 @@
           document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
 
+        const handleUpload = (e) => {
+             const uploadedFiles = Array.from(e.target.files);
+             uploadedFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    let lang = 'javascript'; 
+                    if(file.name.endsWith('.html')) lang = 'html';
+                    else if(file.name.endsWith('.css')) lang = 'css';
+                    else if(file.name.endsWith('.ts') || file.name.endsWith('.tsx')) lang = 'typescript';
+                    onUpload(file.name, ev.target.result, lang);
+                };
+                reader.readAsText(file);
+             });
+             e.target.value = '';
+        }
+
         return (
           <div className="flex flex-col h-full bg-editor-sidebar border-r border-editor-border">
              <div className="p-3 border-b border-editor-border flex justify-between items-center shrink-0">
                <span className="text-xs font-bold text-gray-400">ファイル一覧</span>
                <div className="flex gap-1">
-                 <button onClick={handleDownloadZip} className="text-gray-400 hover:text-white p-1 flex items-center gap-1" title="ZIPで保存">
-                   <Icons.Archive size={16}/> <span className="text-[10px]">保存</span>
-                 </button>
-                 <button onClick={()=>fileInputRef.current.click()} className="text-gray-400 hover:text-white p-1 flex items-center gap-1" title="アップロード">
-                   <Icons.Upload size={16}/> <span className="text-[10px]">読込</span>
-                 </button>
-                 <button onClick={()=>setIsAdding(!isAdding)} className="text-gray-400 hover:text-white p-1 flex items-center gap-1" title="新規">
-                   <Icons.Plus size={16}/> <span className="text-[10px]">追加</span>
-                 </button>
+                 <button onClick={handleDownloadZip} className="text-gray-400 hover:text-white p-1" title="ZIP保存"><Icons.Archive size={16}/></button>
+                 <button onClick={()=>fileInputRef.current.click()} className="text-gray-400 hover:text-white p-1" title="読込"><Icons.Upload size={16}/></button>
+                 <button onClick={handleCreateFolder} className="text-gray-400 hover:text-white p-1" title="フォルダ作成"><Icons.NewFolder size={16}/></button>
+                 <button onClick={()=>setIsAdding(!isAdding)} className="text-gray-400 hover:text-white p-1" title="ファイル追加"><Icons.Plus size={16}/></button>
                </div>
-               <input type="file" multiple ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+               <input type="file" multiple ref={fileInputRef} onChange={handleUpload} className="hidden" />
              </div>
              {isAdding && (
                <form onSubmit={handleSubmit} className="p-2 bg-gray-800 shrink-0 border-b border-editor-border">
-                 <input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-gray-900 text-white text-sm p-2 rounded outline-none border border-blue-500" placeholder="例: components/Button.tsx" autoFocus onBlur={()=>{if(!name)setIsAdding(false)}}/>
+                 <input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-gray-900 text-white text-sm p-2 rounded outline-none border border-blue-500" placeholder="例: components/Btn.tsx" autoFocus onBlur={()=>{if(!name)setIsAdding(false)}}/>
                </form>
              )}
              <div className="flex-1 overflow-y-auto group">
                {files.length === 0 ? (
                  <div className="p-4 text-xs text-center text-gray-600">ファイルがありません</div>
                ) : (
-                 <FileTreeNode node={fileTree} activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete} />
+                 <FileTreeNode node={fileTree} activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete} onRenameFile={onRenameFile} onRenameFolder={onRenameFolder} onDeleteFolder={onDeleteFolder} />
                )}
              </div>
           </div>
         );
       };
 
-      // --- プレビュー画面 (階層・import対応強化版) ---
       const Preview = ({ files }) => {
         const [srcDoc, setSrcDoc] = useState('');
 
@@ -272,16 +284,13 @@
             const fileMap = {};
             files.forEach(f => fileMap[f.name] = f.content);
 
-            // 1. index.html を探す。なければ作成。ある場合は中身を使う。
             let originalHtml = fileMap['index.html'] || `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="root"></div></body></html>`;
 
-            // 2. CSSの注入
             const css = files.filter(f => f.name.endsWith('.css')).map(f => f.content).join('\n');
             const styleTag = `<style>${css} body { background-color: white; }</style>`;
             if (originalHtml.includes('</head>')) originalHtml = originalHtml.replace('</head>', `${styleTag}</head>`);
             else originalHtml += styleTag;
 
-            // 3. JS/TSファイルのコンパイルとImportMapの作成
             const imports = {
               "react": "https://esm.sh/react@18.2.0",
               "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
@@ -299,20 +308,13 @@
                 });
                 const blob = new Blob([result.code], { type: 'application/javascript' });
                 const url = URL.createObjectURL(blob);
-                
-                // ImportMapのキーを生成 ( ./components/Header.tsx と ./components/Header の両方に対応 )
-                // ファイルパスは常に ./ から始まるように正規化
                 const fullPath = "./" + file.name;
                 const noExt = fullPath.replace(/\.(tsx|ts|jsx|js)$/, '');
-                
                 imports[fullPath] = url;
                 imports[noExt] = url;
               } catch (e) { console.error("Compilation error:", file.name, e); }
             }
 
-            // 4. エントリーポイントの検出と実行スクリプトの作成
-            // ユーザーがindex.htmlを持っている場合でも、Reactのエントリーポイント(App.tsxなど)を起動する必要がある。
-            // html内に既にscriptタグがあるかもしれないが、moduleタイプのスクリプトとして追加注入する。
             const entryFile = files.find(f => 
               ['main.tsx', 'index.tsx', 'App.tsx', 'index.js', 'main.js'].includes(f.name) ||
               ['src/main.tsx', 'src/index.tsx', 'src/App.tsx'].includes(f.name)
@@ -322,7 +324,6 @@
             const tailwindScript = `<script src="https://cdn.tailwindcss.com"><\/script>`;
             const babelLib = `<script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>`;
             
-            // エントリーポイントがあれば実行。なければ何もしない（HTML内のscriptに任せる）
             let entryScript = '';
             if (entryFile) {
                entryScript = `<script type="module">import "${'./' + entryFile.name}";<\/script>`;
@@ -345,7 +346,6 @@
         return <iframe srcDoc={srcDoc} className="flex-1 w-full h-full bg-white border-none" sandbox="allow-scripts allow-modals allow-same-origin allow-forms" title="Preview" />;
       };
 
-      // --- サイドバー（プロジェクト管理） ---
       const Sidebar = ({ isOpen, onClose, projects, onSave, onLoad, onDelete, onClear, onImportJSON }) => {
         const fileInputRef = useRef(null);
         const handleExportJSON = () => {
@@ -415,6 +415,35 @@
             return () => window.removeEventListener('resize', handleResize);
         }, []);
 
+        // --- ファイル操作ロジック ---
+        const handleRenameFile = (node) => {
+            const newName = prompt("新しいファイル名 (パスを含めると移動します):", node.name);
+            if (newName && newName !== node.name) {
+                setFiles(prev => prev.map(f => f.id === node.id ? { ...f, name: newName } : f));
+            }
+        };
+
+        const handleRenameFolder = (oldPath, oldName) => {
+            const newName = prompt("新しいフォルダ名:", oldName);
+            if (newName && newName !== oldName) {
+                // oldPath (例: "components") をパスに含む全ファイルを置換
+                const prefix = oldPath + "/";
+                const parentPath = oldPath.substring(0, oldPath.lastIndexOf('/'));
+                const newPath = parentPath ? `${parentPath}/${newName}` : newName;
+                
+                setFiles(prev => prev.map(f => {
+                    if (f.name.startsWith(prefix)) {
+                        return { ...f, name: f.name.replace(oldPath, newPath) };
+                    }
+                    return f;
+                }));
+            }
+        };
+
+        const handleDeleteFolder = (path) => {
+            setFiles(prev => prev.filter(f => !f.name.startsWith(path + "/")));
+        };
+
         const activeFile = files.find(f => f.id === activeId);
 
         return (
@@ -438,7 +467,17 @@
 
             <main className="flex-1 flex overflow-hidden relative">
                <div className={`${(isMobile && mobileTab !== 'files') ? 'hidden' : 'flex'} w-full md:w-56 md:flex-none flex-col h-full z-10 border-r border-editor-border bg-editor-sidebar`}>
-                  <FileExplorer files={files} activeFileId={activeId} onSelect={(id)=>{setActiveId(id); if(isMobile) setMobileTab('editor');}} onAdd={(n,l,c)=>setFiles([...files, {id:generateId(), name:n, language:l, content:c||''} ])} onDelete={(id)=>{setFiles(f=>f.filter(x=>x.id!==id)); if(activeId===id) setActiveId(null);}} onUpload={(n,c,l)=>setFiles(prev=>[...prev, {id:generateId(), name:n, language:l, content:c}])} />
+                  <FileExplorer 
+                    files={files} 
+                    activeFileId={activeId} 
+                    onSelect={(id)=>{setActiveId(id); if(isMobile) setMobileTab('editor');}} 
+                    onAdd={(n,l,c)=>setFiles([...files, {id:generateId(), name:n, language:l, content:c||''} ])} 
+                    onDelete={(id)=>{setFiles(f=>f.filter(x=>x.id!==id)); if(activeId===id) setActiveId(null);}} 
+                    onUpload={(n,c,l)=>setFiles(prev=>[...prev, {id:generateId(), name:n, language:l, content:c}])}
+                    onRenameFile={handleRenameFile}
+                    onRenameFolder={handleRenameFolder}
+                    onDeleteFolder={handleDeleteFolder}
+                  />
                </div>
                <div className={`${(isMobile && mobileTab !== 'editor') ? 'hidden' : 'flex'} flex-1 flex-col min-w-0 md:border-r border-editor-border md:max-w-[50%]`}>
                  <Editor file={activeFile} onChange={(val)=>setFiles(files.map(f=>f.id===activeId?{...f, content:val}:f))} />
