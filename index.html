@@ -10,10 +10,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="CodePlay">
     
-    <!-- アプリアイコン -->
-    <link rel="icon" type="image/png" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ29kZVBsYXkgRWRpdG9yIiwic2hvcnRfbmFtZSI6IkNvZGVQbGF5IiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzExMTgyNyIsInRoZW1lX2NvbG9yIjoiIzExMTgyNyIsImljb25zIjpbeyJzcmMiOiJpY29uLnBuZyIsInNpemVzIjoiNTEyeDUxMiIsInR5cGUiOiJpbWFnZS9wbmcifV19">
+    <!-- アプリアイコン (?v=2 を付けて更新を強制) -->
+    <link rel="icon" type="image/png" href="icon.png?v=2">
+    <link rel="apple-touch-icon" href="icon.png?v=2">
+    
+    <!-- マニフェスト (icon.png?v=2 を指すように更新) -->
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ29kZVBsYXkgRWRpdG9yIiwic2hvcnRfbmFtZSI6IkNvZGVQbGF5IiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzExMTgyNyIsInRoZW1lX2NvbG9yIjoiIzExMTgyNyIsImljb25zIjpbeyJzcmMiOiJpY29uLnBuZz92PTIiLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
 
     <!-- ローカルライブラリ読み込み -->
     <script src="tailwind.js"></script>
@@ -37,6 +39,8 @@
       ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
       body { margin: 0; overflow: hidden; background-color: #111827; touch-action: manipulation; }
       input, textarea, button { font-size: 14px; }
+      /* プレースホルダーの色調整 */
+      textarea::placeholder { color: #555; opacity: 1; }
     </style>
   </head>
   <body>
@@ -56,7 +60,6 @@
         Folder: (p) => <Icon {...p} path='<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>' />,
         X: (p) => <Icon {...p} path='<path d="M18 6 6 18"/><path d="m6 6 12 12"/>' />,
         Check: (p) => <Icon {...p} path='<polyline points="20 6 9 17 4 12"/>' />,
-        Copy: (p) => <Icon {...p} path='<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>' />,
         Code: (p) => <Icon {...p} path='<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' />,
         Play: (p) => <Icon {...p} path='<polygon points="5 3 19 12 5 21 5 3"/>' />,
         List: (p) => <Icon {...p} path='<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>' />,
@@ -110,6 +113,7 @@
               className="flex-1 w-full bg-editor-bg text-gray-300 font-mono text-sm p-4 resize-none focus:outline-none leading-6"
               spellCheck={false}
               autoCapitalize="off"
+              placeholder="ここにコードを入力してください。"
             />
           </div>
         );
@@ -158,7 +162,7 @@
         return <iframe srcDoc={srcDoc} className="flex-1 w-full h-full bg-white border-none" sandbox="allow-scripts allow-modals allow-same-origin" title="Preview" />;
       };
 
-      // --- ファイル管理（アップロード機能追加） ---
+      // --- ファイル管理 ---
       const FileExplorer = ({ files, activeFileId, onSelect, onAdd, onDelete, onUpload }) => {
         const [name, setName] = useState('');
         const [isAdding, setIsAdding] = useState(false);
@@ -183,24 +187,22 @@
              const reader = new FileReader();
              reader.onload = (ev) => {
                 const content = ev.target.result;
-                let lang = 'javascript'; // default
+                let lang = 'javascript'; 
                 if(file.name.endsWith('.html')) lang = 'html';
                 else if(file.name.endsWith('.css')) lang = 'css';
                 else if(file.name.endsWith('.json')) lang = 'json';
                 else if(file.name.endsWith('.ts') || file.name.endsWith('.tsx')) lang = 'typescript';
-                else if(file.type.startsWith('image/')) lang = 'image'; // 画像として扱う
+                else if(file.type.startsWith('image/')) lang = 'image';
                 
                 onUpload(file.name, content, lang);
              };
-             
-             // 画像ならBase64、それ以外はテキストとして読む
              if (file.type.startsWith('image/')) {
                  reader.readAsDataURL(file);
              } else {
                  reader.readAsText(file);
              }
           });
-          e.target.value = ''; // リセット
+          e.target.value = '';
         };
 
         return (
@@ -234,7 +236,7 @@
         );
       };
 
-      // --- サイドバー (プロジェクト管理 & バックアップ) ---
+      // --- サイドバー ---
       const Sidebar = ({ isOpen, onClose, projects, onSave, onLoad, onDelete, onClear, onImportJSON }) => {
         const fileInputRef = useRef(null);
 
@@ -321,9 +323,11 @@
 
       // --- メインアプリ ---
       const App = () => {
-        // 初期状態はHTMLの雛形のみ
+        // ★デフォルトファイルを空にする
         const INITIAL_FILES = [
-          {id:'1', name:'index.html', language:'html', content:'<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="UTF-8">\n  <title>New Project</title>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>'}
+          {id:'1', name:'index.html', language:'html', content:''},
+          {id:'2', name:'style.css', language:'css', content:''},
+          {id:'3', name:'script.js', language:'javascript', content:''}
         ];
 
         const [files, setFiles] = useState(INITIAL_FILES);
