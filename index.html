@@ -11,9 +11,9 @@
     <meta name="apple-mobile-web-app-title" content="CodePlay">
     
     <!-- アプリアイコン -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzExMTgyNyIvPjxwYXRoIGQ9Ik0xNjAgMzY4TDMyIDI1NmwxMjgtMTEyTTM1MiAzNjhsMTI4LTExMi0xMjgtMTEyIiBzdHJva2U9IiMzYjgyZjYiIHN0cm9rZS13aWR0aD0iNDAiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik0yMTAgNDMybTkwLTM1MiIgc3Ryb2tlPSIjYTg1NWY3IiBzdHJva2Utd2lkdGg9IjQwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=">
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzExMTgyNyIvPjxwYXRoIGQ9Ik0xNjAgMzY4TDMyIDI1NmwxMjgtMTEyTTM1MiAzNjhsMTI4LTExMi0xMjgtMTEyIiBzdHJva2U9IiMzYjgyZjYiIHN0cm9rZS13aWR0aD0iNDAiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik0yMTAgNDMybTkwLTM1MiIgc3Ryb2tlPSIjYTg1NWY3IiBzdHJva2Utd2lkdGg9IjQwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=">
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ29kZVBsYXkgRWRpdG9yIiwic2hvcnRfbmFtZSI6IkNvZGVQbGF5IiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzExMTgyNyIsInRoZW1lX2NvbG9yIjoiIzExMTgyNyIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LUEiLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCJ9XX0=">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQ29kZVBsYXkgRWRpdG9yIiwic2hvcnRfbmFtZSI6IkNvZGVQbGF5IiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzExMTgyNyIsInRoZW1lX2NvbG9yIjoiIzExMTgyNyIsImljb25zIjpbeyJzcmMiOiJpY29uLnBuZyIsInNpemVzIjoiNTEyeDUxMiIsInR5cGUiOiJpbWFnZS9wbmcifV19">
 
     <!-- ローカルライブラリ読み込み -->
     <script src="tailwind.js"></script>
@@ -56,11 +56,14 @@
         Folder: (p) => <Icon {...p} path='<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>' />,
         X: (p) => <Icon {...p} path='<path d="M18 6 6 18"/><path d="m6 6 12 12"/>' />,
         Check: (p) => <Icon {...p} path='<polyline points="20 6 9 17 4 12"/>' />,
+        Copy: (p) => <Icon {...p} path='<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>' />,
         Code: (p) => <Icon {...p} path='<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' />,
         Play: (p) => <Icon {...p} path='<polygon points="5 3 19 12 5 21 5 3"/>' />,
         List: (p) => <Icon {...p} path='<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>' />,
         RotateCcw: (p) => <Icon {...p} path='<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>' />,
-        SelectAll: (p) => <Icon {...p} path='<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>' />
+        SelectAll: (p) => <Icon {...p} path='<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>' />,
+        Download: (p) => <Icon {...p} path='<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>' />,
+        Upload: (p) => <Icon {...p} path='<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>' />
       };
 
       const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -81,7 +84,6 @@
           }
         };
 
-        // 全選択機能
         const handleSelectAll = () => {
           if (textareaRef.current) {
             textareaRef.current.focus();
@@ -95,7 +97,6 @@
           <div className="flex flex-col h-full bg-editor-bg relative group">
             <div className="flex items-center justify-between px-4 py-2 bg-editor-sidebar border-b border-editor-border shrink-0">
               <span className="text-sm font-medium text-gray-200">{file.name}</span>
-              {/* 全選択ボタン */}
               <button onClick={handleSelectAll} className="flex flex-col items-center justify-center p-1 text-gray-500 hover:text-white rounded hover:bg-gray-700 w-12 transition-colors">
                 <Icons.SelectAll size={18} />
                 <span className="text-[10px] mt-0.5">全選択</span>
@@ -120,7 +121,7 @@
         
         useEffect(() => {
           const htmlFile = files.find(f => f.name === 'index.html');
-          if (!htmlFile) { setSrcDoc('<html><body style="color:#888;background:#111;padding:20px;font-family:sans-serif;">index.html が見つかりません。</body></html>'); return; }
+          if (!htmlFile) { setSrcDoc('<html><body style="color:#888;background:#111;padding:20px;font-family:sans-serif;">index.html が見つかりません。<br>ファイルを追加してください。</body></html>'); return; }
 
           const allCss = files.filter(f => f.name.endsWith('.css')).map(f => `/* ${f.name} */\n${f.content}`).join('\n');
           const allJs = files.filter(f => f.name.endsWith('.js')).map(f => `// ${f.name}\ntry{${f.content.replace(/import .*?;/g,'')}}catch(e){console.error(e)}`).join('\n');
@@ -157,10 +158,11 @@
         return <iframe srcDoc={srcDoc} className="flex-1 w-full h-full bg-white border-none" sandbox="allow-scripts allow-modals allow-same-origin" title="Preview" />;
       };
 
-      // --- ファイル管理 ---
-      const FileExplorer = ({ files, activeFileId, onSelect, onAdd, onDelete }) => {
+      // --- ファイル管理（アップロード機能追加） ---
+      const FileExplorer = ({ files, activeFileId, onSelect, onAdd, onDelete, onUpload }) => {
         const [name, setName] = useState('');
         const [isAdding, setIsAdding] = useState(false);
+        const fileInputRef = useRef(null);
         
         const handleSubmit = (e) => {
           e.preventDefault();
@@ -171,17 +173,49 @@
           if(name.endsWith('.json')) lang = 'json';
           if(name.endsWith('.ts') || name.endsWith('.tsx')) lang = 'typescript';
           
-          onAdd(name, lang);
+          onAdd(name, lang, '');
           setName(''); setIsAdding(false);
+        };
+
+        const handleFileChange = (e) => {
+          const uploadedFiles = Array.from(e.target.files);
+          uploadedFiles.forEach(file => {
+             const reader = new FileReader();
+             reader.onload = (ev) => {
+                const content = ev.target.result;
+                let lang = 'javascript'; // default
+                if(file.name.endsWith('.html')) lang = 'html';
+                else if(file.name.endsWith('.css')) lang = 'css';
+                else if(file.name.endsWith('.json')) lang = 'json';
+                else if(file.name.endsWith('.ts') || file.name.endsWith('.tsx')) lang = 'typescript';
+                else if(file.type.startsWith('image/')) lang = 'image'; // 画像として扱う
+                
+                onUpload(file.name, content, lang);
+             };
+             
+             // 画像ならBase64、それ以外はテキストとして読む
+             if (file.type.startsWith('image/')) {
+                 reader.readAsDataURL(file);
+             } else {
+                 reader.readAsText(file);
+             }
+          });
+          e.target.value = ''; // リセット
         };
 
         return (
           <div className="flex flex-col h-full bg-editor-sidebar border-r border-editor-border">
              <div className="p-3 border-b border-editor-border flex justify-between items-center shrink-0">
                <span className="text-xs font-bold text-gray-400">ファイル一覧</span>
-               <button onClick={()=>setIsAdding(!isAdding)} className="text-gray-400 hover:text-white p-1 flex items-center gap-1" title="新規ファイル">
-                 <Icons.Plus size={16}/> <span className="text-[10px]">追加</span>
-               </button>
+               <div className="flex gap-2">
+                 <button onClick={()=>fileInputRef.current.click()} className="text-gray-400 hover:text-white p-1 flex items-center gap-1" title="アップロード">
+                   <Icons.Upload size={16}/> <span className="text-[10px]">読込</span>
+                 </button>
+                 <button onClick={()=>setIsAdding(!isAdding)} className="text-gray-400 hover:text-white p-1 flex items-center gap-1" title="新規ファイル">
+                   <Icons.Plus size={16}/> <span className="text-[10px]">追加</span>
+                 </button>
+               </div>
+               <input type="file" multiple ref={fileInputRef} onChange={handleFileChange} className="hidden" />
              </div>
              {isAdding && (
                <form onSubmit={handleSubmit} className="p-2 bg-gray-800 shrink-0 border-b border-editor-border">
@@ -200,16 +234,100 @@
         );
       };
 
+      // --- サイドバー (プロジェクト管理 & バックアップ) ---
+      const Sidebar = ({ isOpen, onClose, projects, onSave, onLoad, onDelete, onClear, onImportJSON }) => {
+        const fileInputRef = useRef(null);
+
+        const handleExportJSON = () => {
+          const dataStr = JSON.stringify(projects, null, 2);
+          const blob = new Blob([dataStr], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `codeplay_backup_${new Date().toISOString().slice(0,10)}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        };
+
+        const handleImportClick = () => fileInputRef.current?.click();
+        const handleFileChange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const json = JSON.parse(event.target.result);
+              if (Array.isArray(json)) {
+                onImportJSON(json);
+                alert("復元しました！");
+              } else {
+                alert("ファイルの形式が正しくありません。");
+              }
+            } catch (err) {
+              alert("読み込みエラー: " + err);
+            }
+          };
+          reader.readAsText(file);
+          e.target.value = '';
+        };
+
+        if(!isOpen) return null;
+        return (
+            <div className="fixed inset-0 z-50 flex">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+                <div className="relative w-80 max-w-[85%] bg-gray-900 border-r border-gray-700 flex flex-col h-full shadow-2xl animate-in slide-in-from-left duration-200">
+                    <div className="p-4 border-b border-gray-800 flex justify-between items-center h-16">
+                        <span className="text-white font-bold flex gap-2 items-center"><Icons.Folder size={20} className="text-blue-500"/> プロジェクト</span>
+                        <button onClick={onClose}><Icons.X size={20} className="text-gray-400"/></button>
+                    </div>
+                    
+                    <div className="p-4 space-y-3 border-b border-gray-800">
+                         <button onClick={()=>{
+                             const name = prompt('プロジェクト名を入力:');
+                             if(name) onSave(name);
+                         }} className="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold hover:bg-blue-500">保存する</button>
+
+                         <div className="flex gap-2">
+                            <button onClick={handleExportJSON} className="flex-1 bg-gray-800 text-gray-300 py-2 rounded text-xs flex items-center justify-center gap-1 border border-gray-700">
+                                <Icons.Download size={14}/> バックアップ
+                            </button>
+                            <button onClick={handleImportClick} className="flex-1 bg-gray-800 text-gray-300 py-2 rounded text-xs flex items-center justify-center gap-1 border border-gray-700">
+                                <Icons.Upload size={14}/> 復元
+                            </button>
+                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
+                         </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                        {projects.length === 0 && <div className="text-center text-gray-500 text-xs mt-10">保存されたプロジェクトはありません</div>}
+                        {projects.map(p => (
+                            <div key={p.id} className="bg-gray-800 p-3 rounded flex justify-between items-center group">
+                                <div onClick={()=>{if(confirm('読み込みますか？')) {onLoad(p); onClose();}}} className="flex-1 cursor-pointer">
+                                    <div className="text-sm font-bold text-gray-200">{p.name}</div>
+                                    <div className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</div>
+                                </div>
+                                <button onClick={()=>onDelete(p.id)} className="text-gray-500 hover:text-red-400 p-2"><Icons.Trash2 size={16}/></button>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="p-4 border-t border-gray-800">
+                        <button onClick={onClear} className="w-full text-red-500 text-xs py-2 border border-red-900/30 rounded">履歴を全消去</button>
+                    </div>
+                </div>
+            </div>
+        );
+      };
+
       // --- メインアプリ ---
       const App = () => {
+        // 初期状態はHTMLの雛形のみ
         const INITIAL_FILES = [
-          {id:'1', name:'index.html', language:'html', content:'<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="UTF-8">\n</head>\n<body>\n  <div id="root"></div>\n</body>\n</html>'},
-          {id:'2', name:'style.css', language:'css', content:'body { background: #111827; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }'},
-          {id:'3', name:'script.js', language:'javascript', content:'const root = document.getElementById("root");\nroot.innerHTML = "<h1>Hello CodePlay!</h1>";'}
+          {id:'1', name:'index.html', language:'html', content:'<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="UTF-8">\n  <title>New Project</title>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>'}
         ];
 
         const [files, setFiles] = useState(INITIAL_FILES);
-        const [activeId, setActiveId] = useState('3');
+        const [activeId, setActiveId] = useState('1');
         const [sidebarOpen, setSidebarOpen] = useState(false);
         const [mobileTab, setMobileTab] = useState('editor');
         const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -242,7 +360,7 @@
                </div>
                
                <div className="flex items-center gap-1 pr-1">
-                 <button onClick={()=>{if(confirm('現在のコードを初期状態に戻しますか？')) setFiles(INITIAL_FILES)}} className="flex flex-col items-center justify-center p-2 text-gray-400 hover:text-white rounded hover:bg-gray-700 w-14">
+                 <button onClick={()=>{if(confirm('現在のコードをリセットしますか？')) setFiles(INITIAL_FILES)}} className="flex flex-col items-center justify-center p-2 text-gray-400 hover:text-white rounded hover:bg-gray-700 w-14">
                     <Icons.RotateCcw size={18}/>
                     <span className="text-[10px] mt-0.5">リセット</span>
                  </button>
@@ -254,7 +372,14 @@
                
                {/* 1. ファイル一覧 */}
                <div className={`${(isMobile && mobileTab !== 'files') ? 'hidden' : 'flex'} w-full md:w-56 md:flex-none flex-col h-full z-10 border-r border-editor-border bg-editor-sidebar`}>
-                  <FileExplorer files={files} activeFileId={activeId} onSelect={(id)=>{setActiveId(id); if(isMobile) setMobileTab('editor');}} onAdd={(n,l)=>setFiles([...files, {id:generateId(), name:n, language:l, content:''} ])} onDelete={(id)=>{setFiles(f=>f.filter(x=>x.id!==id)); if(activeId===id) setActiveId(null);}} />
+                  <FileExplorer 
+                    files={files} 
+                    activeFileId={activeId} 
+                    onSelect={(id)=>{setActiveId(id); if(isMobile) setMobileTab('editor');}} 
+                    onAdd={(n,l,c)=>setFiles([...files, {id:generateId(), name:n, language:l, content:c||''} ])} 
+                    onDelete={(id)=>{setFiles(f=>f.filter(x=>x.id!==id)); if(activeId===id) setActiveId(null);}} 
+                    onUpload={(n,c,l)=>setFiles(prev=>[...prev, {id:generateId(), name:n, language:l, content:c}])}
+                  />
                </div>
 
                {/* 2. エディタ */}
@@ -269,7 +394,7 @@
 
             </main>
 
-            {/* スマホ用ボトムタブ（アイコン＋文字） */}
+            {/* スマホ用ボトムタブ */}
             <div className="md:hidden h-16 bg-editor-sidebar border-t border-editor-border flex items-center justify-around shrink-0 pb-safe z-30">
               <button onClick={()=>setMobileTab('files')} className={`flex flex-col items-center justify-center gap-0.5 w-full h-full ${mobileTab==='files'?'text-blue-400 bg-gray-800':'text-gray-500'}`}>
                 <Icons.List size={20}/> <span className="text-[10px]">ファイル</span>
@@ -282,38 +407,17 @@
               </button>
             </div>
 
-            {/* サイドバー (プロジェクト管理) */}
-            {sidebarOpen && (
-                <div className="fixed inset-0 z-50 flex">
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={()=>setSidebarOpen(false)} />
-                    <div className="relative w-80 max-w-[85%] bg-gray-900 border-r border-gray-700 flex flex-col h-full shadow-2xl animate-in slide-in-from-left duration-200">
-                        <div className="p-4 border-b border-gray-800 flex justify-between items-center h-16">
-                            <span className="text-white font-bold flex gap-2 items-center"><Icons.Folder size={20} className="text-blue-500"/> プロジェクト</span>
-                            <button onClick={()=>setSidebarOpen(false)}><Icons.X size={20} className="text-gray-400"/></button>
-                        </div>
-                        <div className="p-4 space-y-3 border-b border-gray-800">
-                             <button onClick={()=>{
-                                 const name = prompt('プロジェクト名を入力:');
-                                 if(name) setProjects(prev => [{id:generateId(), name, files:[...files], createdAt:Date.now()}, ...prev]);
-                             }} className="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold hover:bg-blue-500">現在の状態を保存</button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                            {projects.map(p => (
-                                <div key={p.id} className="bg-gray-800 p-3 rounded flex justify-between items-center group">
-                                    <div onClick={()=>{if(confirm('読み込みますか？')) {setFiles(p.files); setSidebarOpen(false);}}} className="flex-1 cursor-pointer">
-                                        <div className="text-sm font-bold text-gray-200">{p.name}</div>
-                                        <div className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</div>
-                                    </div>
-                                    <button onClick={()=>setProjects(prev=>prev.filter(x=>x.id!==p.id))} className="text-gray-500 hover:text-red-400 p-2"><Icons.Trash2 size={16}/></button>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="p-4 border-t border-gray-800">
-                            <button onClick={()=>{if(confirm('全削除しますか？')) setProjects([])}} className="w-full text-red-500 text-xs py-2 border border-red-900/30 rounded">履歴を全消去</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* サイドバー */}
+            <Sidebar 
+                isOpen={sidebarOpen} 
+                onClose={()=>setSidebarOpen(false)} 
+                projects={projects}
+                onSave={(n)=>setProjects(prev => [{id:generateId(), name:n, files:[...files], createdAt:Date.now()}, ...prev])}
+                onLoad={(p)=>setFiles(p.files)}
+                onDelete={(id)=>setProjects(p=>p.filter(x=>x.id!==id))}
+                onClear={()=>{if(confirm('全削除しますか？')) setProjects([])}}
+                onImportJSON={(json)=>setProjects(prev => [...json, ...prev])}
+            />
           </div>
         );
       };
