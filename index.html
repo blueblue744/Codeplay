@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodePlay AI (Offline Edition)</title>
+    
+    <!-- ローカルライブラリの読み込み -->
+    <script src="js/tailwind.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['sans-serif'], mono: ['monospace'] },
+            colors: { editor: { bg: '#1e1e1e', sidebar: '#252526' } }
+          },
+        },
+      }
+    </script>
+    <script src="js/react.js"></script>
+    <script src="js/react-dom.js"></script>
+    <script src="js/babel.js"></script>
+    
+    <style>
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: #1e1e1e; }
+      ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+      body { margin: 0; overflow: hidden; background-color: #111827; }
+    </style>
+  </head>
+  <body>
+    <div id="root" class="h-screen w-screen"></div>
+
+    <script type="text/babel" data-presets="react,typescript">
+      const { useState, useEffect, useRef } = React;
+
+      // --- アイコンコンポーネント (Lucide依存を排除しSVG直書き) ---
+      const Icon = ({ path, size = 16, className = "" }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: path }} />
+      );
+      const Icons = {
+        Code: (p) => <Icon {...p} path='<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' />,
+        Play: (p) => <Icon {...p} path='<polygon points="5 3 19 12 5 21 5 3"/>' />,
+        RefreshCw: (p) => <Icon {...p} path='<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>' />,
+        Wand2: (p) => <Icon {...p} path='<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/>' />,
+        RotateCcw: (p) => <Icon {...p} path='<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>' />,
+        Folder: (p) => <Icon {...p} path='<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>' />,
+        Layout: (p) => <Icon {...p} path='<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="9" y2="21"/>' />,
+        Copy: (p) => <Icon {...p} path='<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>' />,
+        Check: (p) => <Icon {...p} path='<polyline points="20 6 9 17 4 12"/>' />,
+        X: (p) => <Icon {...p} path='<path d="M18 6 6 18"/><path d="m6 6 12 12"/>' />,
+        Save: (p) => <Icon {...p} path='<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/>' />,
+        Trash2: (p) => <Icon {...p} path='<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>' />,
+        FileCode: (p) => <Icon {...p} path='<path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/>' />,
+        FolderOpen: (p) => <Icon {...p} path='<path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-3.25 7a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>' />,
+        AlertCircle: (p) => <Icon {...p} path='<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>' />,
+        FileJson: (p) => <Icon {...p} path='<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1"/>' />,
+        FileType2: (p) => <Icon {...p} path='<path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 13v-1h6v1"/><path d="M5 12v6"/><path d="M4 18h2"/>' />,
+        Plus: (p) => <Icon {...p} path='<path d="M5 12h14"/><path d="M12 5v14"/>' />,
+        File: (p) => <Icon {...p} path='<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>' />,
+        Download: (p) => <Icon {...p} path='<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>' />,
+        Upload: (p) => <Icon {...p} path='<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>' />,
+        FileText: (p) => <Icon {...p} path='<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13H8"/><path d="M16 13h-2"/><path d="M10 17H8"/><path d="M16 17h-2"/><path d="M10 9H8"/>' />
+      };
+
+      // --- Utilities ---
+      const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
+
+      // --- Components ---
+      const Editor = ({ file, onChange }) => {
+        const [copied, setCopied] = useState(false);
+        const textareaRef = useRef(null);
+        useEffect(() => { if (textareaRef.current) textareaRef.current.scrollTop = 0; }, [file?.id]);
+
+        const handleKeyDown = (e) => {
+          if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = e.target.selectionStart;
+            const end = e.target.selectionEnd;
+            const val = file?.content || '';
+            onChange(val.substring(0, start) + '  ' + val.substring(end));
+            requestAnimationFrame(() => { e.target.selectionStart = e.target.selectionEnd = start + 2; });
+          }
+        };
+
+        if (!file) return <div className="flex-1 flex flex-col items-center justify-center text-gray-500 bg-editor-bg h-full"><Icons.Code size={48} className="mb-4 opacity-20" /><p>ファイルを選択してください</p></div>;
+
+        return (
+          <div className="flex flex-col h-full bg-editor-bg relative group">
+            <div className="flex items-center justify-between px-4 py-2 bg-editor-sidebar border-b border-gray-800 shrink-0">
+              <span className="text-sm font-medium text-gray-200">{file.name}</span>
+              <button onClick={() => { navigator.clipboard.writeText(file.content); setCopied(true); setTimeout(()=>setCopied(false),2000); }} className="text-gray-500 hover:text-white p-1 rounded hover:bg-gray-700">
+                {copied ? <Icons.Check size={14} className="text-green-500" /> : <Icons.Copy size={14} />}
+              </button>
+            </div>
+            <textarea
+              ref={textareaRef}
+              value={file.content}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="flex-1 w-full bg-editor-bg text-gray-300 font-mono text-sm p-4 resize-none focus:outline-none"
+              spellCheck={false}
+            />
+          </div>
+        );
+      };
+
+      const Preview = ({ files }) => {
+        const [srcDoc, setSrcDoc] = useState('');
+        useEffect(() => {
+            const htmlFile = files.find(f => f.name === 'index.html');
+            if (!htmlFile) { setSrcDoc('<html><body>index.html not found</body></html>'); return; }
+            
+            // --- オフラインプレビュー生成ロジック ---
+            const css = files.filter(f => f.language === 'css').map(f => `<style>${f.content}</style>`).join('\\n');
+            const js = files.filter(f => f.language === 'javascript').map(f => `try{${f.content.replace(/import .*?;/g,'')}}catch(e){console.error(e)}`).join('\\n');
+            
+            // TS/TSXのコンパイル (Babelがローカルにあるので動作する)
+            let tsCompiled = '';
+            if (window.Babel) {
+              files.filter(f => f.language === 'typescript').forEach(f => {
+                try {
+                  tsCompiled += window.Babel.transform(f.content, { presets: ['react', 'typescript'], filename: f.name }).code + '\\n';
+                } catch(e) { console.error('Compile Error', e); }
+              });
+            }
+
+            // HTML構築 (React/Tailwindの注入)
+            // iframe内では親のライブラリは参照できないため、単純化してCDNリンクを埋め込むか、
+            // もしくはコンパイル済みコードだけ動かす。オフラインでiframe内まで完璧にするには工夫が必要だが、
+            // 今回は親のstyleとscriptを流し込む簡易実装とする。
+            let doc = htmlFile.content;
+            const headEnd = doc.indexOf('</head>');
+            const injectHead = `
+              ${css}
+              <script src="js/tailwind.js"><\/script>
+              <script src="js/react.js"><\/script>
+              <script src="js/react-dom.js"><\/script>
+            `;
+            if(headEnd !== -1) doc = doc.replace('</head>', injectHead + '</head>');
+            else doc = injectHead + doc;
+
+            const injectBody = `<script>${js}\\n${tsCompiled}<\/script>`;
+            const bodyEnd = doc.indexOf('</body>');
+            if(bodyEnd !== -1) doc = doc.replace('</body>', injectBody + '</body>');
+            else doc += injectBody;
+
+            setSrcDoc(doc);
+        }, [files]);
+        return <iframe srcDoc={srcDoc} className="flex-1 w-full h-full bg-white border-none" sandbox="allow-scripts allow-modals allow-same-origin" />;
+      };
+
+      const FileExplorer = ({ files, activeFileId, onSelect, onAdd, onDelete }) => {
+        const [name, setName] = useState('');
+        const [isAdding, setIsAdding] = useState(false);
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          if(!name) return;
+          let lang = 'javascript';
+          if(name.endsWith('html')) lang = 'html';
+          if(name.endsWith('css')) lang = 'css';
+          if(name.endsWith('json')) lang = 'json';
+          if(name.endsWith('ts') || name.endsWith('tsx')) lang = 'typescript';
+          onAdd(name, lang);
+          setName(''); setIsAdding(false);
+        };
+        return (
+          <div className="w-56 bg-editor-sidebar border-r border-gray-800 flex flex-col">
+             <div className="p-3 border-b border-gray-800 flex justify-between items-center">
+               <span className="text-xs font-bold text-gray-400">FILES</span>
+               <button onClick={()=>setIsAdding(!isAdding)} className="text-gray-400 hover:text-white"><Icons.Plus size={16}/></button>
+             </div>
+             {isAdding && <form onSubmit={handleSubmit} className="p-2 bg-gray-800"><input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-gray-900 text-white text-xs p-1 rounded" placeholder="index.ts" autoFocus onBlur={()=>!name && setIsAdding(false)}/></form>}
+             <div className="flex-1 overflow-y-auto">
+               {files.map(f => (
+                 <div key={f.id} onClick={()=>onSelect(f.id)} className={`flex justify-between items-center px-3 py-1.5 cursor-pointer text-sm ${activeFileId===f.id ? 'bg-gray-800 text-white border-l-2 border-blue-500' : 'text-gray-400'}`}>
+                   <span className="truncate">{f.name}</span>
+                   <button onClick={(e)=>{e.stopPropagation(); onDelete(f.id)}} className="hover:text-red-400"><Icons.Trash2 size={12}/></button>
+                 </div>
+               ))}
+             </div>
+          </div>
+        );
+      };
+
+      const Sidebar = ({ isOpen, onClose, projects, onSave, onLoad, onDelete, onClear, onImport }) => {
+        const [pName, setPName] = useState('');
+        const fileRef = useRef(null);
+        if(!isOpen) return null;
+        return (
+          <div className="fixed inset-0 z-50 flex">
+            <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+            <div className="relative w-80 bg-gray-900 border-r border-gray-800 flex flex-col h-full shadow-xl">
+              <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+                 <span className="text-white font-bold flex gap-2"><Icons.FolderOpen size={20} className="text-blue-500"/> Projects</span>
+                 <button onClick={onClose} className="text-gray-400"><Icons.X size={20}/></button>
+              </div>
+              <div className="p-4 bg-gray-800/50 border-b border-gray-800 space-y-3">
+                 <div className="flex gap-2">
+                   <input value={pName} onChange={e=>setPName(e.target.value)} placeholder="New Project Name" className="flex-1 bg-gray-950 text-white text-xs p-2 rounded border border-gray-700"/>
+                   <button onClick={()=>{if(pName) {onSave(pName); setPName('')}}} className="bg-blue-600 text-white px-3 rounded text-xs">Save</button>
+                 </div>
+                 <div className="flex gap-2">
+                   <button onClick={()=>{
+                     const blob = new Blob([JSON.stringify(projects,null,2)], {type:'application/json'});
+                     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+                   }} className="flex-1 bg-gray-800 border border-gray-600 text-gray-300 py-1 rounded text-xs flex justify-center gap-1"><Icons.Download size={12}/> Backup</button>
+                   <button onClick={()=>fileRef.current.click()} className="flex-1 bg-gray-800 border border-gray-600 text-gray-300 py-1 rounded text-xs flex justify-center gap-1"><Icons.Upload size={12}/> Restore</button>
+                   <input type="file" ref={fileRef} className="hidden" accept=".json" onChange={e=>{
+                     const r = new FileReader(); r.onload=ev=>{ try{onImport(JSON.parse(ev.target.result)); alert('Restored!');}catch(err){alert('Error');} }; r.readAsText(e.target.files[0]); e.target.value='';
+                   }}/>
+                 </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                {projects.map(p => (
+                  <div key={p.id} className="bg-gray-800 p-2 rounded flex justify-between items-center group">
+                    <div onClick={()=>{if(confirm('Load '+p.name+'?')) {onLoad(p); onClose();}}} className="flex-1 cursor-pointer">
+                      <div className="text-sm text-gray-200 font-bold">{p.name}</div>
+                      <div className="text-[10px] text-gray-500">{new Date(p.createdAt).toLocaleDateString()} • {p.files.length} files</div>
+                    </div>
+                    <button onClick={()=>confirm('Delete?') && onDelete(p.id)} className="text-gray-600 hover:text-red-400 p-1"><Icons.Trash2 size={14}/></button>
+                  </div>
+                ))}
+              </div>
+              <div className="p-3 border-t border-gray-800">
+                <button onClick={()=>confirm('Delete ALL?') && onClear()} className="w-full text-red-500 text-xs py-2 border border-red-900/30 rounded hover:bg-red-900/10">Clear All Data</button>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const App = () => {
+        const [files, setFiles] = useState([
+          {id:'1', name:'index.html', language:'html', content:'<div id="root"></div>'},
+          {id:'2', name:'style.css', language:'css', content:'body { @apply bg-gray-100 flex items-center justify-center min-h-screen; }'},
+          {id:'3', name:'app.tsx', language:'typescript', content:'const App = () => (\n  <div className="p-10 bg-white rounded shadow-xl text-center">\n    <h1 className="text-3xl font-bold text-blue-600">Offline App</h1>\n    <p className="text-gray-600 mt-2">React + TS + Tailwind works offline!</p>\n  </div>\n);\nReactDOM.createRoot(document.getElementById("root")).render(<App />);'}
+        ]);
+        const [activeId, setActiveId] = useState('3');
+        const [prompt, setPrompt] = useState('');
+        const [loading, setLoading] = useState(false);
+        const [sidebar, setSidebar] = useState(false);
+        const [projects, setProjects] = useState(() => { try { return JSON.parse(localStorage.getItem('cp_offline_projects')||'[]'); } catch{ return []; } });
+        
+        useEffect(() => localStorage.setItem('cp_offline_projects', JSON.stringify(projects)), [projects]);
+
+        const generateCode = async () => {
+          if(!navigator.onLine) { alert('AI生成機能はインターネット接続が必要です。'); return; }
+          if(!prompt) return;
+          setLoading(true);
+          try {
+            let key = localStorage.getItem('gemini_key');
+            if(!key) { key = prompt('Gemini API Key:'); if(key) localStorage.setItem('gemini_key', key); }
+            if(!key) throw new Error('No Key');
+            
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `Generate web app files (index.html, css, js/ts) for: ${prompt}. Return JSON object {files: [{name, content, language}]}. No markdown.` }] }]
+              })
+            });
+            const data = await res.json();
+            const txt = data.candidates[0].content.parts[0].text;
+            const jsonStr = txt.replace(/```json|```/g, ''); // Simple cleanup
+            const parsed = JSON.parse(jsonStr);
+            
+            if(parsed.files) {
+              const newFiles = parsed.files.map(f => ({id: generateId(), name: f.name, language: f.language || 'javascript', content: f.content}));
+              setFiles(newFiles);
+              setActiveId(newFiles[0].id);
+            }
+          } catch(e) { alert('Generation failed: ' + e.message); }
+          setLoading(false);
+        };
+
+        return (
+          <div className="flex flex-col h-screen text-white font-sans">
+            <Sidebar isOpen={sidebar} onClose={()=>setSidebar(false)} projects={projects} 
+              onSave={(n)=>setProjects(p=>[{id:generateId(), name:n, files:[...files], createdAt:Date.now()},...p])} 
+              onLoad={(p)=>setFiles(p.files.map(f=>({...f})))} 
+              onDelete={(id)=>setProjects(p=>p.filter(x=>x.id!==id))} 
+              onClear={()=>{setProjects([]); localStorage.removeItem('cp_offline_projects');}}
+              onImport={(imp)=>setProjects(p=>[...imp, ...p])}
+            />
+            
+            <header className="bg-editor-sidebar border-b border-gray-800 p-2 flex items-center justify-between shrink-0">
+               <div className="flex items-center gap-3">
+                 <button onClick={()=>setSidebar(true)} className="p-2 hover:bg-gray-700 rounded text-gray-400"><Icons.Folder size={20}/></button>
+                 <span className="font-bold hidden sm:block">CodePlay Offline</span>
+               </div>
+               <div className="flex-1 max-w-xl mx-4 flex gap-2">
+                 <input value={prompt} onChange={e=>setPrompt(e.target.value)} onKeyDown={e=>e.key==='Enter'&&generateCode()} placeholder={navigator.onLine ? "AI Generate..." : "AI Offline"} disabled={!navigator.onLine} className="flex-1 bg-gray-950 border border-gray-700 rounded px-3 text-sm focus:border-blue-500 outline-none disabled:opacity-50"/>
+                 <button onClick={generateCode} disabled={loading||!navigator.onLine} className="bg-blue-600 px-3 rounded text-xs font-bold disabled:opacity-50">{loading?<Icons.RefreshCw className="animate-spin"/>:<Icons.Wand2/>}</button>
+               </div>
+               <button onClick={()=>confirm('Reset?')&&setFiles([])}><Icons.RotateCcw size={18} className="text-gray-400 hover:text-red-400"/></button>
+            </header>
+
+            <main className="flex-1 flex overflow-hidden">
+               <FileExplorer files={files} activeFileId={activeId} onSelect={setActiveId} onAdd={(n,l)=>setFiles([...files, {id:generateId(), name:n, language:l, content:''} ])} onDelete={(id)=>{if(confirm('Delete?')) setFiles(f=>f.filter(x=>x.id!==id)); if(activeId===id) setActiveId(null);}} />
+               <div className="flex-1 flex flex-col min-w-0 border-r border-gray-800 max-w-[50%]">
+                 <Editor file={files.find(f=>f.id===activeId)} onChange={(val)=>setFiles(files.map(f=>f.id===activeId?{...f, content:val}:f))} />
+               </div>
+               <div className="flex-1 bg-white flex flex-col"><Preview files={files} /></div>
+            </main>
+          </div>
+        );
+      };
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>
