@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>CodePlay AI (日本語版)</title>
+    <title>CodePlay AI (修正版)</title>
     
-    <!-- 同じフォルダにあるライブラリを読み込み -->
+    <!-- ローカルライブラリ読み込み -->
     <script src="tailwind.js"></script>
     <script>
       tailwind.config = {
@@ -22,13 +22,12 @@
     <script src="babel.js"></script>
     
     <style>
-      /* スクロールバーのカスタマイズ */
       ::-webkit-scrollbar { width: 6px; height: 6px; }
       ::-webkit-scrollbar-track { background: #1e1e1e; }
       ::-webkit-scrollbar-thumb { background: #424242; border-radius: 3px; }
       body { margin: 0; overflow: hidden; background-color: #111827; touch-action: manipulation; }
-      /* iPhoneでの表示調整 */
-      input, textarea, button { font-size: 16px; } /* 自動ズーム防止 */
+      /* iOSでの入力ズーム防止 */
+      input, textarea, button { font-size: 16px; }
     </style>
   </head>
   <body>
@@ -41,6 +40,7 @@
       const Icon = ({ path, size = 18, className = "" }) => (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: path }} />
       );
+      // アイコン定義
       const Icons = {
         Menu: (p) => <Icon {...p} path='<line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/>' />,
         Plus: (p) => <Icon {...p} path='<path d="M5 12h14"/><path d="M12 5v14"/>' />,
@@ -158,11 +158,11 @@
         };
         return (
           <div className="flex flex-col h-full bg-editor-sidebar border-r border-gray-800">
-             <div className="p-3 border-b border-gray-800 flex justify-between items-center bg-editor-sidebar">
-               <span className="text-xs font-bold text-gray-400">ファイル一覧</span>
+             <div className="p-3 border-b border-gray-800 flex justify-between items-center bg-editor-sidebar shrink-0">
+               <span className="text-xs font-bold text-gray-400">ファイル</span>
                <button onClick={()=>setIsAdding(!isAdding)} className="text-gray-400 hover:text-white p-2"><Icons.Plus size={18}/></button>
              </div>
-             {isAdding && <form onSubmit={handleSubmit} className="p-2 bg-gray-800"><input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-gray-900 text-white text-sm p-2 rounded" placeholder="ファイル名 (例: test.js)" autoFocus onBlur={()=>!name && setIsAdding(false)}/></form>}
+             {isAdding && <form onSubmit={handleSubmit} className="p-2 bg-gray-800 shrink-0"><input value={name} onChange={e=>setName(e.target.value)} className="w-full bg-gray-900 text-white text-sm p-2 rounded" placeholder="ファイル名 (例: test.js)" autoFocus onBlur={()=>!name && setIsAdding(false)}/></form>}
              <div className="flex-1 overflow-y-auto">
                {files.map(f => (
                  <div key={f.id} onClick={()=>onSelect(f.id)} className={`flex justify-between items-center px-4 py-3 cursor-pointer text-sm border-b border-gray-800 ${activeFileId===f.id ? 'bg-editor-active text-white border-l-4 border-l-blue-500' : 'text-gray-400'}`}>
@@ -236,20 +236,11 @@
         const [prompt, setPrompt] = useState('');
         const [loading, setLoading] = useState(false);
         const [sidebar, setSidebar] = useState(false);
-        
-        // スマホ用タブ状態 (files | editor | preview)
         const [mobileTab, setMobileTab] = useState('editor'); 
-        // 画面幅監視
-        const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-        const [projects, setProjects] = useState(() => { try { return JSON.parse(localStorage.getItem('cp_offline_projects')||'[]'); } catch{ return []; } });
         
-        useEffect(() => {
-          localStorage.setItem('cp_offline_projects', JSON.stringify(projects));
-          const handleResize = () => setIsMobile(window.innerWidth < 768);
-          window.addEventListener('resize', handleResize);
-          return () => window.removeEventListener('resize', handleResize);
-        }, [projects]);
+        // 永続化
+        const [projects, setProjects] = useState(() => { try { return JSON.parse(localStorage.getItem('cp_offline_projects')||'[]'); } catch{ return []; } });
+        useEffect(() => { localStorage.setItem('cp_offline_projects', JSON.stringify(projects)); }, [projects]);
 
         const generateCode = async () => {
           if(!navigator.onLine) { alert('AI生成機能を使うにはインターネット接続が必要です。'); return; }
@@ -271,12 +262,11 @@
             const txt = data.candidates[0].content.parts[0].text;
             const jsonStr = txt.replace(/```json|```/g, ''); 
             const parsed = JSON.parse(jsonStr);
-            
             if(parsed.files) {
               const newFiles = parsed.files.map(f => ({id: generateId(), name: f.name, language: f.language || 'javascript', content: f.content}));
               setFiles(newFiles);
               setActiveId(newFiles[0].id);
-              if(isMobile) setMobileTab('preview'); // 生成後はプレビューへ
+              setMobileTab('preview');
             }
           } catch(e) { alert('生成に失敗しました: ' + e.message); }
           setLoading(false);
@@ -284,7 +274,7 @@
 
         const handleSelectFile = (id) => {
           setActiveId(id);
-          if(isMobile) setMobileTab('editor'); // スマホならエディタへ移動
+          setMobileTab('editor'); // ファイルを選んだらエディタへ移動
         };
 
         const activeFile = files.find(f => f.id === activeId);
@@ -299,40 +289,42 @@
               onImport={(imp)=>setProjects(p=>[...imp, ...p])}
             />
             
-            {/* ヘッダー */}
             <header className="bg-editor-sidebar border-b border-gray-800 p-2 flex items-center justify-between shrink-0 h-14 z-10">
                <div className="flex items-center gap-3">
                  <button onClick={()=>setSidebar(true)} className="p-2 hover:bg-gray-700 rounded text-gray-400"><Icons.Menu size={24}/></button>
                  <span className="font-bold hidden sm:block text-lg">CodePlay</span>
                </div>
                <div className="flex-1 max-w-xl mx-2 sm:mx-4 flex gap-2">
-                 <input value={prompt} onChange={e=>setPrompt(e.target.value)} onKeyDown={e=>e.key==='Enter'&&generateCode()} placeholder={navigator.onLine ? "何を作りますか？ (AI生成)" : "オフライン編集中"} disabled={!navigator.onLine} className="flex-1 bg-gray-950 border border-gray-700 rounded px-3 text-sm focus:border-blue-500 outline-none disabled:opacity-50 h-9"/>
+                 <input value={prompt} onChange={e=>setPrompt(e.target.value)} onKeyDown={e=>e.key==='Enter'&&generateCode()} placeholder={navigator.onLine ? "AI生成..." : "オフライン"} disabled={!navigator.onLine} className="flex-1 bg-gray-950 border border-gray-700 rounded px-3 text-sm focus:border-blue-500 outline-none disabled:opacity-50 h-9"/>
                  <button onClick={generateCode} disabled={loading||!navigator.onLine} className="bg-blue-600 px-3 rounded text-sm font-bold disabled:opacity-50 h-9 w-10 flex items-center justify-center">{loading?<Icons.RefreshCw className="animate-spin"/>:<Icons.Wand2/>}</button>
                </div>
                <button onClick={()=>confirm('初期状態に戻しますか？')&&setFiles([])}><Icons.RotateCcw size={20} className="text-gray-400 hover:text-red-400 p-1"/></button>
             </header>
 
-            {/* メインエリア (スマホ対応レイアウト) */}
             <main className="flex-1 flex overflow-hidden relative">
+               {/* 
+                 ▼ 修正点: CSSクラスでの表示制御に変更
+                 md:flex = PCサイズ(幅768px以上)では強制的に表示
+                 hidden = 通常(スマホ)は隠す -> mobileTabが一致する場合のみ flex に上書き
+               */}
                
-               {/* ファイル一覧 (PC:常時表示 / スマホ:タブ選択時のみ) */}
-               <div className={`${isMobile && mobileTab !== 'files' ? 'hidden' : 'flex'} w-full md:w-56 md:flex-none flex-col h-full`}>
+               {/* 1. ファイル一覧 */}
+               <div className={`${mobileTab==='files'?'flex':'hidden'} md:flex w-full md:w-56 md:flex-none flex-col h-full z-10`}>
                   <FileExplorer files={files} activeFileId={activeId} onSelect={handleSelectFile} onAdd={(n,l)=>setFiles([...files, {id:generateId(), name:n, language:l, content:''} ])} onDelete={(id)=>{if(confirm('削除しますか？')) setFiles(f=>f.filter(x=>x.id!==id)); if(activeId===id) setActiveId(null);}} />
                </div>
 
-               {/* エディタ (PC:常時表示 / スマホ:タブ選択時のみ) */}
-               <div className={`${isMobile && mobileTab !== 'editor' ? 'hidden' : 'flex'} flex-1 flex-col min-w-0 md:border-r border-gray-800 md:max-w-[50%]`}>
+               {/* 2. エディタ */}
+               <div className={`${mobileTab==='editor'?'flex':'hidden'} md:flex flex-1 flex-col min-w-0 md:border-r border-gray-800 md:max-w-[50%]`}>
                  <Editor file={activeFile} onChange={(val)=>setFiles(files.map(f=>f.id===activeId?{...f, content:val}:f))} />
                </div>
 
-               {/* プレビュー (PC:常時表示 / スマホ:タブ選択時のみ) */}
-               <div className={`${isMobile && mobileTab !== 'preview' ? 'hidden' : 'flex'} flex-1 flex-col bg-white h-full`}>
+               {/* 3. プレビュー */}
+               <div className={`${mobileTab==='preview'?'flex':'hidden'} md:flex flex-1 flex-col bg-white h-full`}>
                   <Preview files={files} />
                </div>
-
             </main>
 
-            {/* スマホ用ボトムナビゲーション (PCでは非表示) */}
+            {/* スマホ用ボトムナビ (PCサイズでは非表示 md:hidden) */}
             <div className="md:hidden h-14 bg-editor-sidebar border-t border-gray-800 flex items-center justify-around shrink-0 pb-safe">
               <button onClick={()=>setMobileTab('files')} className={`flex flex-col items-center gap-1 p-1 ${mobileTab==='files'?'text-blue-400':'text-gray-500'}`}>
                 <Icons.List size={20}/> <span className="text-[10px]">ファイル</span>
